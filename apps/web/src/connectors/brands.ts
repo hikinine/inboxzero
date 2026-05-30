@@ -17,7 +17,7 @@ export const BRANDS: Record<string, Brand> = {
   'Notion':             { bg: '#FFFFFF', logo: '/logos/notion.png',           icon: 'doc',      dark: true, border: true },
   'Google Agenda':      { bg: '#FFFFFF', logo: '/logos/google-calendar.svg',  icon: 'calendar', dark: true, border: true },
   'Notificações iOS':   { bg: '#000000', logo: '/logos/apple.svg',            icon: 'bell',     border: true },
-  'Linear':             { bg: '#5E6AD2', logo: '/logos/linear.svg',           icon: 'checklist' },
+  'Linear':             { bg: '#1a1a1f', logo: '/logos/linear.svg',           icon: 'checklist' },
   'Google Drive':       { bg: '#FFFFFF', logo: '/logos/google-drive.svg',     icon: 'doc',      dark: true, border: true },
   'ChatGPT':            { bg: '#0E8F71',                                      icon: 'spark' },
   'GitHub':             { bg: '#1B1B20',                                      icon: 'doc',      border: true },
