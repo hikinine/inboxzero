@@ -4,12 +4,28 @@ import { ConnectorsService } from '../../application/connectors.service.js';
 import { ConnectorResponseDto } from '../dto/connector-response.dto.js';
 import { CreateConnectorDto } from '../dto/create-connector.dto.js';
 import { UpdateConnectorDto } from '../dto/update-connector.dto.js';
+import { ValidateKeyDto, ValidateKeyResponseDto } from '../dto/validate-key.dto.js';
 
 const WsParam = z.object({ workspaceId: z.string() });
 const IdParam = z.object({ workspaceId: z.string(), connectorId: z.string() });
 
 export const connectorController: FastifyPluginAsyncZod = async (app) => {
   const svc = new ConnectorsService(app.prisma);
+
+  app.post('/:workspaceId/connectors/validate-key', {
+    schema: {
+      tags: ['Connectors'],
+      operationId: 'validateKey',
+      params: WsParam,
+      body: ValidateKeyDto,
+      response: { 200: ValidateKeyResponseDto },
+    },
+  }, async (req) => {
+    if (req.body.provider === 'LINEAR') {
+      return svc.validateLinearKey(req.body.apiKey);
+    }
+    return { valid: false, user: null, error: 'Provider não suportado' };
+  });
 
   app.get('/:workspaceId/connectors', {
     schema: {
