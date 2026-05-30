@@ -59,15 +59,16 @@ export function ConnectorConfigScreen({ onNavigate }: ConnectorConfigProps) {
     );
   }
 
-  const cfg = connector.config as Record<string, string>;
-  const endpoint   = cfg['endpoint']   ?? null;
-  const transport  = cfg['transport']  ?? 'HTTP streaming · SSE';
-  const token      = cfg['token']      ? `••••••••••${cfg['token'].slice(-4)}` : null;
-  const webhookUrl = cfg['webhookUrl'] ?? null;
-  const apiKey     = cfg['apiKey']     ? `••••••••••${cfg['apiKey'].slice(-4)}` : null;
+  const cfg = connector.config as Record<string, unknown>;
+  const endpoint      = (cfg['endpoint']      as string) ?? null;
+  const transport     = (cfg['transport']      as string) ?? 'HTTP streaming · SSE';
+  const token         = cfg['token']      ? `••••••••••${(cfg['token'] as string).slice(-4)}`  : null;
+  const webhookUrl    = (cfg['webhookUrl']     as string) ?? null;
+  const apiKey        = cfg['apiKey']     ? `••••••••••${(cfg['apiKey'] as string).slice(-4)}` : null;
+  const validatedUser = cfg['validatedUser'] as { name?: string; email?: string } | null ?? null;
+  const events        = Array.isArray(cfg['events']) ? (cfg['events'] as string[]) : null;
 
-  // All remaining config fields not explicitly shown above
-  const knownKeys = new Set(['endpoint', 'transport', 'token', 'webhookUrl', 'apiKey']);
+  const knownKeys = new Set(['endpoint', 'transport', 'token', 'webhookUrl', 'apiKey', 'validatedUser', 'events']);
   const extraEntries = Object.entries(cfg).filter(([k]) => !knownKeys.has(k));
 
   return (
@@ -180,7 +181,44 @@ export function ConnectorConfigScreen({ onNavigate }: ConnectorConfigProps) {
             </div>
           )}
 
-          {/* Config extra (campos adicionais) */}
+          {/* Conta validada (Linear, etc.) */}
+          {validatedUser?.name && (
+            <div className="tk-sec">
+              <div className="tk-sec-h"><h3>Conta</h3><span className="hint">Autenticação validada</span></div>
+              <div className="tk-cfg-card">
+                <div className="tk-cfg-row">
+                  <div className="lead">
+                    <div className="k">{validatedUser.name}</div>
+                    {validatedUser.email && <div className="d">{validatedUser.email}</div>}
+                  </div>
+                  <span className="tk-status" style={{ fontSize: 12 }}>
+                    <span className="tk-statusdot" />Autenticado
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Eventos configurados */}
+          {events && events.length > 0 && (
+            <div className="tk-sec">
+              <div className="tk-sec-h"><h3>Eventos</h3><span className="hint">Sinais que geram itens</span></div>
+              <div className="tk-cfg-card">
+                {events.map((ev) => (
+                  <div key={ev} className="tk-cfg-row">
+                    <div className="lead">
+                      <div className="k" style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{ev}</div>
+                    </div>
+                    <div style={{ color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600 }}>
+                      <Icon name="check" size={13} stroke={2.4} />Ativo
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Campos extras desconhecidos */}
           {extraEntries.length > 0 && (
             <div className="tk-sec">
               <div className="tk-sec-h"><h3>Configuração adicional</h3></div>
@@ -191,7 +229,9 @@ export function ConnectorConfigScreen({ onNavigate }: ConnectorConfigProps) {
                       <div className="k" style={{ fontFamily: 'var(--mono)', fontSize: 13 }}>{k}</div>
                     </div>
                     <div className="tk-code">
-                      <span className="val">{String(v)}</span>
+                      <span className="val">
+                        {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -200,7 +240,7 @@ export function ConnectorConfigScreen({ onNavigate }: ConnectorConfigProps) {
           )}
 
           {/* Config vazia */}
-          {!endpoint && !token && !webhookUrl && !apiKey && extraEntries.length === 0 && (
+          {!endpoint && !token && !webhookUrl && !apiKey && !validatedUser && !events && extraEntries.length === 0 && (
             <div className="tk-sec">
               <div className="tk-cfg-card" style={{ padding: '20px 22px', color: 'var(--text-faint)', fontSize: 14 }}>
                 Nenhuma configuração salva. Edite o conector para adicionar endpoint, token ou webhookUrl.
