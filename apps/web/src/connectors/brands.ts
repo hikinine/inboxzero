@@ -12,7 +12,7 @@ export const BRANDS: Record<string, Brand> = {
   'WhatsApp':           { bg: '#1FAE5A', logo: '/logos/whatsapp.svg',        icon: 'chat' },
   'Slack':              { bg: '#4A154B', logo: '/logos/slack.svg',            icon: 'send' },
   'Gmail':              { bg: '#FFFFFF', logo: '/logos/gmail.svg',            icon: 'mail',     dark: true, border: true },
-  'Nubank':             { bg: '#820ad1', logo: '/logos/nubank.svg',           icon: 'card' },
+  'Nubank':             { bg: '#820ad1', logo: '/logos/nubank.png',           icon: 'card' },
   'Telegram':           { bg: '#229ED9', logo: '/logos/telegram.svg',         icon: 'send' },
   'Notion':             { bg: '#FFFFFF', logo: '/logos/notion.png',           icon: 'doc',      dark: true, border: true },
   'Google Agenda':      { bg: '#FFFFFF', logo: '/logos/google-calendar.svg',  icon: 'calendar', dark: true, border: true },
