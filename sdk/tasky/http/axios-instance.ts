@@ -4,12 +4,12 @@ const getBaseURL = () => {
   try {
     // Vite environment (browser/dev)
     if (typeof import.meta !== 'undefined' && (import.meta as Record<string, unknown>).env) {
-      return (import.meta as { env: Record<string, string> }).env['VITE_API_URL'] ?? 'http://localhost:4000';
+      return (import.meta as { env: Record<string, string> }).env['VITE_API_URL'] ?? 'http://localhost:3061';
     }
   } catch {
     // ignore
   }
-  return 'http://localhost:4000';
+  return 'http://localhost:3061';
 };
 
 export const AXIOS_INSTANCE = Axios.create({

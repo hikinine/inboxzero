@@ -31,7 +31,7 @@ export async function bootstrapApplication({
   if (generateOpenApiAndExit) process.exit(0);
 
   if (listenHttp) {
-    const port = Number(process.env['PORT'] ?? 4000);
+    const port = Number(process.env['PORT'] ?? 3061);
     await app.listen({ port, host: '0.0.0.0' });
   }
 
