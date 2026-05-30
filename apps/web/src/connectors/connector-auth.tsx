@@ -1,0 +1,102 @@
+import { Icon }              from '../components/icon.tsx';
+import { BRANDS, SCATTER, ROWS } from './brands.ts';
+import type { Screen }       from '../app.tsx';
+
+function Tile({ brand, size = 60, radius = 17, style }: { brand: string; size?: number; radius?: number; style?: React.CSSProperties }) {
+  const b = BRANDS[brand];
+  if (!b) return null;
+  return (
+    <div className="tkc-tile" style={{ background: b.bg, color: b.dark ? '#16161A' : '#fff', width: size, height: size, borderRadius: radius, border: b.border ? '1px solid rgba(255,255,255,0.09)' : 'none', ...style }}>
+      <Icon name={b.icon} size={Math.round(size * 0.46)} />
+    </div>
+  );
+}
+
+function LeftPanel() {
+  return (
+    <div className="tkc-left">
+      <div className="tkc-gridlines" />
+      <div className="tkc-glow" />
+      {SCATTER.map((t, i) => <Tile key={i} brand={t.brand} style={{ left: t.left, top: t.top }} />)}
+      <div className="tkc-leftfade" />
+      <div className="tkc-leftcap">
+        <div className="h">Tudo o que importa, num lugar só.</div>
+        <div className="p">Mensagens, e-mails, compras e eventos viram tarefas sozinhos — conectados de forma segura via MCP.</div>
+      </div>
+    </div>
+  );
+}
+
+interface ConnectorAuthProps {
+  onNavigate: (s: Screen) => void;
+}
+
+export function ConnectorAuthScreen({ onNavigate }: ConnectorAuthProps) {
+  return (
+    <div className="tkc-stage">
+      {/* dimmed background card */}
+      <div className="tkc-card" style={{ filter: 'brightness(0.4) saturate(0.8)' }}>
+        <LeftPanel />
+        <div className="tkc-right">
+          <div className="tkc-rtop">
+            <div>
+              <h2 className="tkc-title">Adicionar conectores</h2>
+              <div className="tkc-sub">Conecte seus apps e deixe a Tasky transformar tudo em tarefas — sozinha.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Authorization modal */}
+      <div className="tk-overlay">
+        <div className="tkc-connmodal">
+          <div className="tkc-cm-head">
+            <Tile brand="Notion" size={48} radius={14} style={{ position: 'static' }} />
+            <div style={{ flex: 1 }}>
+              <div className="tkc-cm-title">Conectar Notion</div>
+              <div className="tkc-cm-sub">
+                <Icon name="plug" size={13} />Autorização segura
+                <span className="tk-mcp">MCP</span>
+              </div>
+            </div>
+            <div style={{ color: 'var(--text-faint)', cursor: 'pointer' }} onClick={() => onNavigate('onboarding-add')}>
+              <Icon name="x" size={18} />
+            </div>
+          </div>
+
+          <p className="tkc-perm-lbl">Ao conectar, a Tasky poderá</p>
+          <div>
+            <div className="tkc-perm">
+              <div className="ck"><Icon name="check" size={14} stroke={2.4} /></div>
+              <div className="tx">
+                Ler as páginas que você escolher
+                <div className="d">Somente os bancos de dados que você marcar como tarefas.</div>
+              </div>
+            </div>
+            <div className="tkc-perm">
+              <div className="ck"><Icon name="check" size={14} stroke={2.4} /></div>
+              <div className="tx">
+                Criar e atualizar tarefas
+                <div className="d">Itens do Notion entram direto na sua lista do Tasky.</div>
+              </div>
+            </div>
+            <div className="tkc-perm">
+              <div className="ck"><Icon name="check" size={14} stroke={2.4} /></div>
+              <div className="tx">
+                Escutar mudanças em tempo real
+                <div className="d">Via webhooks — sem precisar abrir o aplicativo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="tkc-cm-foot">
+            <span className="tk-textbtn" onClick={() => onNavigate('onboarding-add')}>Cancelar</span>
+            <span className="tk-primary" onClick={() => onNavigate('connectors')}>
+              <Icon name="plug" size={16} />Conectar com Notion
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
