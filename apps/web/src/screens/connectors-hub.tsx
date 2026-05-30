@@ -2,19 +2,20 @@ import { useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useConnectorsList, useConnectorsUpdate } from '@tasky/sdk';
 import { Icon } from '../components/icon.tsx';
-import type { IconName } from '../components/icon.tsx';
+import { BrandTile } from '../connectors/brand-tile.tsx';
 
-const TYPE_ICON: Record<string, IconName> = {
-  GMAIL:           'mail',
-  SLACK:           'send',
-  WHATSAPP:        'chat',
-  NUBANK:          'card',
-  GITHUB:          'doc',
-  LINEAR:          'checklist',
-  NOTION:          'doc',
-  GOOGLE_CALENDAR: 'calendar',
-  TELEGRAM:        'send',
-  CUSTOM:          'plug',
+// ConnectorType → brand name (for BrandTile lookup)
+const TYPE_TO_BRAND: Record<string, string> = {
+  GMAIL:           'Gmail',
+  SLACK:           'Slack',
+  WHATSAPP:        'WhatsApp',
+  NUBANK:          'Nubank',
+  GITHUB:          'GitHub',
+  LINEAR:          'Linear',
+  NOTION:          'Notion',
+  GOOGLE_CALENDAR: 'Google Agenda',
+  TELEGRAM:        'Telegram',
+  CUSTOM:          '',
 };
 
 interface ConnectorsHubProps {
@@ -33,6 +34,8 @@ export function ConnectorsHubScreen({ onNavigate }: ConnectorsHubProps) {
     },
   });
 
+  const activeCount = connectors.filter((c) => c.enabled).length;
+
   return (
     <div className="tk-main">
       <div className="tk-scroll">
@@ -45,43 +48,50 @@ export function ConnectorsHubScreen({ onNavigate }: ConnectorsHubProps) {
                   ? 'Carregando…'
                   : connectors.length === 0
                     ? 'Nenhum conector configurado'
-                    : `${connectors.filter((c) => c.enabled).length} serviço${connectors.filter((c) => c.enabled).length !== 1 ? 's' : ''} ativo${connectors.filter((c) => c.enabled).length !== 1 ? 's' : ''} via MCP`}
+                    : `${activeCount} serviço${activeCount !== 1 ? 's' : ''} ativo${activeCount !== 1 ? 's' : ''} via MCP`}
               </div>
             </div>
           </div>
 
           <div className="tk-conngrid">
-            {connectors.map((c) => (
-              <div
-                key={c.id}
-                className={`tk-conn${!c.enabled ? ' off' : ''}`}
-                onClick={() => onNavigate(`connectors/${c.id}`)}
-              >
-                <div className="tk-conn-ico">
-                  <Icon name={TYPE_ICON[c.type] ?? 'plug'} size={22} />
-                </div>
-                <div className="mid">
-                  <div className="nm">{c.name}</div>
-                  <div className="st">
-                    {c.enabled ? 'Ativo' : 'Desativado'}
-                    {c.enabled && <span className="tk-mcp">MCP</span>}
+            {connectors.map((c) => {
+              const brand = TYPE_TO_BRAND[c.type] ?? '';
+              return (
+                <div
+                  key={c.id}
+                  className={`tk-conn${!c.enabled ? ' off' : ''}`}
+                  onClick={() => onNavigate(`connectors/${c.id}`)}
+                >
+                  {brand ? (
+                    <BrandTile brand={brand} size={46} radius={13} />
+                  ) : (
+                    <div className="tk-conn-ico">
+                      <Icon name="plug" size={22} />
+                    </div>
+                  )}
+                  <div className="mid">
+                    <div className="nm">{c.name}</div>
+                    <div className="st">
+                      {c.enabled ? 'Ativo' : 'Desativado'}
+                      {c.enabled && <span className="tk-mcp">MCP</span>}
+                    </div>
+                  </div>
+                  <div
+                    className={`tk-toggle${c.enabled ? ' on' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateConnector({
+                        workspaceId: workspaceSlug!,
+                        connectorId: c.id,
+                        data: { enabled: !c.enabled },
+                      });
+                    }}
+                  >
+                    <div className="knob" />
                   </div>
                 </div>
-                <div
-                  className={`tk-toggle${c.enabled ? ' on' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateConnector({
-                      workspaceId: workspaceSlug!,
-                      connectorId: c.id,
-                      data: { enabled: !c.enabled },
-                    });
-                  }}
-                >
-                  <div className="knob" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {!isLoading && connectors.length === 0 && (
               <div
@@ -99,10 +109,7 @@ export function ConnectorsHubScreen({ onNavigate }: ConnectorsHubProps) {
               </div>
             )}
 
-            <div
-              className="tk-conn tk-conn-add"
-              onClick={() => onNavigate('connectors/add')}
-            >
+            <div className="tk-conn tk-conn-add" onClick={() => onNavigate('connectors/add')}>
               <Icon name="plus" size={18} />
               Adicionar conector
             </div>

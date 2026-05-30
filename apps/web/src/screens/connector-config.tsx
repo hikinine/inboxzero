@@ -1,19 +1,19 @@
 import { useParams } from 'react-router';
 import { useConnectorsGetById } from '@tasky/sdk';
 import { Icon } from '../components/icon.tsx';
-import type { IconName } from '../components/icon.tsx';
+import { BrandTile } from '../connectors/brand-tile.tsx';
 
-const TYPE_ICON: Record<string, IconName> = {
-  GMAIL:           'mail',
-  SLACK:           'send',
-  WHATSAPP:        'chat',
-  NUBANK:          'card',
-  GITHUB:          'doc',
-  LINEAR:          'checklist',
-  NOTION:          'doc',
-  GOOGLE_CALENDAR: 'calendar',
-  TELEGRAM:        'send',
-  CUSTOM:          'plug',
+const TYPE_TO_BRAND: Record<string, string> = {
+  GMAIL:           'Gmail',
+  SLACK:           'Slack',
+  WHATSAPP:        'WhatsApp',
+  NUBANK:          'Nubank',
+  GITHUB:          'GitHub',
+  LINEAR:          'Linear',
+  NOTION:          'Notion',
+  GOOGLE_CALENDAR: 'Google Agenda',
+  TELEGRAM:        'Telegram',
+  CUSTOM:          '',
 };
 
 interface ConnectorConfigProps {
@@ -81,9 +81,13 @@ export function ConnectorConfigScreen({ onNavigate }: ConnectorConfigProps) {
 
           {/* Header */}
           <div className="tk-cfg-head">
-            <div className="tk-conn-ico">
-              <Icon name={TYPE_ICON[connector.type] ?? 'plug'} size={26} />
-            </div>
+            {TYPE_TO_BRAND[connector.type] ? (
+              <BrandTile brand={TYPE_TO_BRAND[connector.type]!} size={54} radius={15} />
+            ) : (
+              <div className="tk-conn-ico" style={{ width: 54, height: 54, borderRadius: 15 }}>
+                <Icon name="plug" size={26} />
+              </div>
+            )}
             <div style={{ flex: 1 }}>
               <div className="nm">{connector.name}</div>
               <div className="sub">
