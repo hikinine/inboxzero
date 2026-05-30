@@ -7,27 +7,148 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Task {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  priority    Priority   @default(MEDIUM)
-  dueDate     DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+model Workspace {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  avatarColor String   @default("#4ADE80")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  @@map("tasks")
+  members    WorkspaceMember[]
+  connectors Connector[]
+  events     Event[]
+  items      Item[]
+
+  @@map("workspaces")
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  memberships WorkspaceMember[]
+
+  @@map("users")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Connector {
+  id          String        @id @default(cuid())
+  workspaceId String
+  type        ConnectorType
+  name        String
+  config      Json
+  enabled     Boolean       @default(true)
+  lastSyncAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events    Event[]
+
+  @@map("connectors")
+}
+
+model Event {
+  id          String      @id @default(cuid())
+  workspaceId String
+  connectorId String
+  rawPayload  Json
+  status      EventStatus @default(PENDING)
+  processedAt DateTime?
+  agentNotes  String?
+  createdAt   DateTime    @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  connector Connector @relation(fields: [connectorId], references: [id])
+  items     Item[]
+
+  @@map("events")
+}
+
+model Item {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  eventId      String?
+  type         ItemType
+  title        String
+  description  String?
+  priority     Priority   @default(MEDIUM)
+  status       ItemStatus @default(OPEN)
+  dueDate      DateTime?
+  snoozedUntil DateTime?
+  metadata     Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  event     Event?    @relation(fields: [eventId], references: [id])
+
+  @@map("items")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ConnectorType {
+  GMAIL
+  SLACK
+  WHATSAPP
+  NUBANK
+  GITHUB
+  LINEAR
+  NOTION
+  GOOGLE_CALENDAR
+  TELEGRAM
+  CUSTOM
+}
+
+enum EventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  IGNORED
+  FAILED
+}
+
+enum ItemType {
+  TASK
+  FOLLOW_UP
+  REMINDER
+  NOTIFICATION
+  DRAFT
+}
+
+enum ItemStatus {
+  OPEN
   DONE
+  SNOOZED
+  DISMISSED
 }
 
 enum Priority {
   LOW
   MEDIUM
   HIGH
+  URGENT
 }
