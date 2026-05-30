@@ -41,62 +41,50 @@ async function graphql(apiKey: string, query: string, variables?: object): Promi
 }
 
 async function fetchAssignedIssues(apiKey: string, since: Date | null): Promise<LinearIssue[]> {
-  // First sync: last 48h to avoid flooding. After that, use lastSyncAt.
   const cutoff = since ?? new Date(Date.now() - 48 * 60 * 60 * 1000);
 
-  const query = `
-    query Issues($since: DateTimeComparison) {
-      issues(
-        filter: {
-          assignee: { isMe: { eq: true } }
-          updatedAt: $since
-        }
-        orderBy: updatedAt
-      ) {
-        nodes {
-          id title description url priority
-          state { name }
-          team  { name }
-          updatedAt createdAt
-        }
+  const query = `{
+    issues(
+      filter: {
+        assignee: { isMe: { eq: true } }
+        updatedAt: { gt: "${cutoff.toISOString()}" }
+      }
+      orderBy: updatedAt
+    ) {
+      nodes {
+        id title description url priority
+        state { name }
+        team  { name }
+        updatedAt createdAt
       }
     }
-  `;
+  }`;
 
-  const data = await graphql(apiKey, query, {
-    since: { gt: cutoff.toISOString() },
-  }) as { issues: { nodes: LinearIssue[] } };
-
+  const data = await graphql(apiKey, query) as { issues: { nodes: LinearIssue[] } };
   return data.issues?.nodes ?? [];
 }
 
 async function fetchMentions(apiKey: string, since: Date | null): Promise<LinearComment[]> {
   const cutoff = since ?? new Date(Date.now() - 48 * 60 * 60 * 1000);
 
-  const query = `
-    query Comments($since: DateTimeComparison) {
-      comments(
-        filter: {
-          mention: { isMe: { eq: true } }
-          updatedAt: $since
-        }
-      ) {
-        nodes {
-          id body url
-          issue { id title url }
-          updatedAt
-        }
+  const query = `{
+    comments(
+      filter: {
+        updatedAt: { gt: "${cutoff.toISOString()}" }
+      }
+    ) {
+      nodes {
+        id body url
+        issue { id title url }
+        updatedAt
       }
     }
-  `;
+  }`;
 
   try {
-    const data = await graphql(apiKey, query, {
-      since: { gt: cutoff.toISOString() },
-    }) as { comments: { nodes: LinearComment[] } };
+    const data = await graphql(apiKey, query) as { comments: { nodes: LinearComment[] } };
     return data.comments?.nodes ?? [];
   } catch {
-    // mention filter may not be supported in all Linear plans
     return [];
   }
 }

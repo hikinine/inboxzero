@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "poll": "tsx src/poll-only.ts",
     "start": "node dist/main.js",
     "build": "tsc"
   },
