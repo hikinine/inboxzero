@@ -829,7 +829,8 @@ html, body, #root {
 }
 
 .tkc-listwrap { position: relative; flex: 1; margin-top: 10px; min-height: 0; overflow: hidden; }
-.tkc-list { position: absolute; inset: 0; overflow: hidden; padding: 6px 0 20px; }
+.tkc-list { position: absolute; inset: 0; overflow-y: auto; padding: 6px 0 20px; scrollbar-width: none; }
+.tkc-list::-webkit-scrollbar { display: none; }
 .tkc-listwrap::after {
   content: '';
   position: absolute;
