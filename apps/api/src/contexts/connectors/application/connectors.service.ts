@@ -33,7 +33,11 @@ export class ConnectorsService {
   update(id: string, dto: UpdateConnectorDto) {
     return this.prisma.connector.update({
       where: { id },
-      data: { ...dto, config: dto.config as any },
+      data: {
+        ...dto,
+        config:     dto.config as any,
+        lastSyncAt: dto.lastSyncAt ? new Date(dto.lastSyncAt) : undefined,
+      },
     });
   }
 

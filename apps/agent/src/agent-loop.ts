@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getTaskyTools } from './tools/tasky-tools.js';
+import { pollLinear } from './pollers/linear.js';
 
 const LOOP_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 
@@ -95,8 +96,33 @@ export async function startAgentLoop(workspaceId: string, apiUrl: string): Promi
   const client = new Anthropic(); // uses ANTHROPIC_API_KEY from env
 
   const runOnce = async () => {
-    console.log(`\n[Agent] ${new Date().toISOString()} — verificando eventos pendentes...`);
+    console.log(`\n[Agent] ${new Date().toISOString()} — ciclo iniciado`);
 
+    // 1. Poll connectors that use polling (LINEAR, GMAIL, etc.)
+    try {
+      const connectorsRes = await fetch(`${apiUrl}/${workspaceId}/connectors`);
+      if (connectorsRes.ok) {
+        const connectors = await connectorsRes.json() as Array<{
+          id: string; workspaceId: string; type: string;
+          config: Record<string, unknown>; lastSyncAt: string | null; enabled: boolean;
+        }>;
+
+        for (const c of connectors.filter((c) => c.enabled)) {
+          if (c.type === 'LINEAR') {
+            try {
+              await pollLinear(c, apiUrl);
+            } catch (err) {
+              console.error(`  [Linear] Erro ao fazer polling do conector ${c.id}:`, err);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Agent] Erro ao buscar conectores para polling:', err);
+    }
+
+    // 2. Process pending events with LLM
+    console.log(`[Agent] Verificando eventos pendentes...`);
     let events: Event[];
     try {
       events = await fetchPendingEvents(workspaceId, apiUrl);
