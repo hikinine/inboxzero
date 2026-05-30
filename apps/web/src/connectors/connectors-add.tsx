@@ -1,3 +1,6 @@
+import { useParams } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { useConnectorsCreate } from '@tasky/sdk';
 import { Icon }              from '../components/icon.tsx';
 import { BRANDS, SCATTER, ROWS } from './brands.ts';
 // ---- Brand tile (colored square icon) ----
@@ -91,7 +94,34 @@ interface ConnectorsAddProps {
   onNavigate: (path: string) => void;
 }
 
+const BRAND_TO_TYPE: Record<string, string> = {
+  WhatsApp: 'WHATSAPP', Slack: 'SLACK', Gmail: 'GMAIL',
+  Nubank: 'NUBANK', Telegram: 'TELEGRAM', Notion: 'NOTION',
+  'Google Agenda': 'GOOGLE_CALENDAR', Linear: 'LINEAR',
+  'Google Drive': 'CUSTOM', ChatGPT: 'CUSTOM', GitHub: 'GITHUB',
+};
+
 export function ConnectorsAddScreen({ onNavigate }: ConnectorsAddProps) {
+  const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
+  const qc = useQueryClient();
+  const { mutate: createConnector, isPending } = useConnectorsCreate({
+    mutation: {
+      onSuccess: (created) => {
+        qc.invalidateQueries({ queryKey: [`/${workspaceSlug}/connectors`] });
+        // Navigate to config page for the new connector
+        onNavigate(`connectors/${created.id}`);
+      },
+    },
+  });
+
+  const handleConnect = (brand: string) => {
+    const type = BRAND_TO_TYPE[brand] ?? 'CUSTOM';
+    createConnector({
+      workspaceId: workspaceSlug!,
+      data: { type: type as any, name: brand, config: {} },
+    });
+  };
+
   return (
     <div className="tkc-stage">
       <div className="tkc-card">
@@ -126,9 +156,7 @@ export function ConnectorsAddScreen({ onNavigate }: ConnectorsAddProps) {
                   key={r.brand}
                   {...r}
                   onConnect={() => {
-                    if (r.brand === 'Gmail')  { onNavigate('onboarding-gmail');  return; }
-                    if (r.brand === 'Linear') { onNavigate('onboarding-linear'); return; }
-                    onNavigate('onboarding-auth');
+                    if (!isPending) handleConnect(r.brand);
                   }}
                 />
               ))}

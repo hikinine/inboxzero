@@ -15,10 +15,11 @@ const NAV_ITEMS: { id: string; icon: Parameters<typeof Icon>[0]['name']; label: 
   { id: 'inbox',     icon: 'inbox',     label: 'Inbox'   },
   { id: 'tasks',     icon: 'checklist', label: 'Tarefas' },
   { id: 'agenda',    icon: 'calendar',  label: 'Agenda'  },
+  { id: 'events',    icon: 'spark',     label: 'Eventos' },
 ];
 
 export function Rail({ active, workspaces, activeSlug, onNavigate, onSwitchWorkspace }: RailProps) {
-  const isConnectors = active === 'connectors' || active === 'events';
+  const isConnectors = active === 'connectors';
 
   return (
     <div className="tk-rail">
