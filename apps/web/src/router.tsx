@@ -8,6 +8,8 @@ const InboxPage         = lazy(() => import('./pages/inbox-page.tsx').then(m => 
 const TasksPage         = lazy(() => import('./pages/tasks-page.tsx').then(m => ({ default: m.TasksPage })));
 const AgendaScreen      = lazy(() => import('./screens/agenda.tsx').then(m => ({ default: m.AgendaScreen })));
 const ConnectorsHub     = lazy(() => import('./screens/connectors-hub.tsx').then(m => ({ default: m.ConnectorsHubScreen })));
+const ConnectorsList    = lazy(() => import('./screens/connectors-list.tsx').then(m => ({ default: m.ConnectorsListScreen })));
+const ClaudeCode        = lazy(() => import('./screens/claude-code.tsx').then(m => ({ default: m.ClaudeCodeScreen })));
 const ConnectorConfig   = lazy(() => import('./screens/connector-config.tsx').then(m => ({ default: m.ConnectorConfigScreen })));
 const ConnectorsAdd     = lazy(() => import('./connectors/connectors-add.tsx').then(m => ({ default: m.ConnectorsAddScreen })));
 const ConnectorAuth     = lazy(() => import('./connectors/connector-auth.tsx').then(m => ({ default: m.ConnectorAuthScreen })));
@@ -39,9 +41,11 @@ export const router = createBrowserRouter([
       { path: 'tasks',             element: <S><TasksPage /></S> },
       { path: 'agenda',            element: <S><AgendaScreen /></S> },
       { path: 'events',            element: <S><EventsPage /></S> },
-      { path: 'connectors',        element: <S><WithNav Component={ConnectorsHub} /></S> },
+      { path: 'connectors',        element: <S><WithNav Component={ConnectorsList} /></S> },
+      { path: 'connectors/hub',    element: <S><WithNav Component={ConnectorsHub} /></S> },
       { path: 'connectors/add',    element: <S><WithNav Component={ConnectorsAdd} /></S> },
       { path: 'connectors/auth',   element: <S><WithNav Component={ConnectorAuth} /></S> },
+      { path: 'connectors/claude', element: <S><WithNav Component={ClaudeCode} /></S> },
       { path: 'connectors/gmail',  element: <S><WithNav Component={GmailOAuth} /></S> },
       { path: 'connectors/linear', element: <S><WithNav Component={LinearSetup} /></S> },
       { path: 'connectors/:id',    element: <S><WithNav Component={ConnectorConfig} /></S> },
