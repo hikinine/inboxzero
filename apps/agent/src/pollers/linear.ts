@@ -92,12 +92,17 @@ async function fetchMentions(apiKey: string, since: Date | null): Promise<Linear
 async function ingestEvent(
   connector: Connector,
   payload: object,
+  externalId: string,
   apiUrl: string,
 ): Promise<void> {
   const res = await fetch(`${apiUrl}/${connector.workspaceId}/events`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ connectorId: connector.id, rawPayload: payload }),
+    body:    JSON.stringify({
+      connectorId: connector.id,
+      externalId,
+      rawPayload:  payload,
+    }),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -138,12 +143,12 @@ export async function pollLinear(connector: Connector, apiUrl: string): Promise<
   ) {
     const issues = await fetchAssignedIssues(apiKey, since);
     for (const issue of issues) {
-      await ingestEvent(connector, {
-        source:  'linear_polling',
-        type:    'Issue',
-        action:  'sync',
-        data:    issue,
-      }, apiUrl);
+      await ingestEvent(
+        connector,
+        { source: 'linear_polling', type: 'Issue', action: 'sync', data: issue },
+        `linear:Issue:${issue.id}`,
+        apiUrl,
+      );
       issueCount++;
     }
   }
@@ -152,12 +157,12 @@ export async function pollLinear(connector: Connector, apiUrl: string): Promise<
   if (enabledEvents.includes('commentMention')) {
     const comments = await fetchMentions(apiKey, since);
     for (const comment of comments) {
-      await ingestEvent(connector, {
-        source: 'linear_polling',
-        type:   'Comment',
-        action: 'mention',
-        data:   comment,
-      }, apiUrl);
+      await ingestEvent(
+        connector,
+        { source: 'linear_polling', type: 'Comment', action: 'mention', data: comment },
+        `linear:Comment:${comment.id}`,
+        apiUrl,
+      );
       mentionCount++;
     }
   }

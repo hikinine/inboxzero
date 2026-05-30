@@ -21,11 +21,42 @@ export class EventsService {
     });
   }
 
-  ingest(workspaceId: string, dto: IngestEventDto) {
+  async ingest(workspaceId: string, dto: IngestEventDto) {
+    // Sem externalId: webhook ou ingest manual — cria sempre
+    if (!dto.externalId) {
+      return this.prisma.event.create({
+        data: {
+          workspaceId,
+          connectorId: dto.connectorId,
+          rawPayload:  dto.rawPayload as any,
+          status:      'PENDING',
+        },
+      });
+    }
+
+    // Com externalId (polling): idempotente
+    // - PENDING existente → atualiza payload (item mudou, re-avalia)
+    // - PROCESSED/IGNORED existente → cria novo evento (mudança após processamento)
+    // - Não existe → cria
+    const existing = await this.prisma.event.findFirst({
+      where: { connectorId: dto.connectorId, externalId: dto.externalId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existing?.status === 'PENDING' || existing?.status === 'PROCESSING') {
+      // Já está na fila — atualiza o payload com dados mais recentes
+      return this.prisma.event.update({
+        where: { id: existing.id },
+        data:  { rawPayload: dto.rawPayload as any },
+      });
+    }
+
+    // Não existe ou já foi processado — cria novo
     return this.prisma.event.create({
       data: {
         workspaceId,
         connectorId: dto.connectorId,
+        externalId:  dto.externalId,
         rawPayload:  dto.rawPayload as any,
         status:      'PENDING',
       },

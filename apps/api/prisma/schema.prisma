@@ -70,6 +70,7 @@ model Event {
   id          String      @id @default(cuid())
   workspaceId String
   connectorId String
+  externalId  String?     // ex: "linear:Issue:abc123" — garante idempotência no polling
   rawPayload  Json
   status      EventStatus @default(PENDING)
   processedAt DateTime?
@@ -80,6 +81,7 @@ model Event {
   connector Connector @relation(fields: [connectorId], references: [id])
   items     Item[]
 
+  @@unique([connectorId, externalId]) // previne duplicatas por conector
   @@map("events")
 }
 
