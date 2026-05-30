@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { useEventsList, useConnectorsList } from '@tasky/sdk';
 import { BrandTile } from '../connectors/brand-tile.tsx';
 import { Icon } from '../components/icon.tsx';
@@ -62,6 +62,7 @@ function groupByDay(rows: EventRow[]): { date: string; items: EventRow[] }[] {
 
 export function EventsPage() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
+  const navigate = useNavigate();
   const [activeSource, setActiveSource] = useState('Tudo');
   const [activeStatus, setActiveStatus] = useState('Todos');
 
@@ -257,11 +258,15 @@ export function EventsPage() {
                   return (
                     <div
                       key={row.id}
+                      onClick={() => navigate(`/${workspaceSlug}/events/${row.id}`)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 0,
                         height: 50, padding: '0 20px',
                         borderTop: i === 0 ? 'none' : '1px solid var(--hairline)',
+                        cursor: 'pointer', transition: 'background 0.12s',
                       }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--surface-2)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
                       {/* Brand tile */}
                       <div style={{ marginRight: 12, flexShrink: 0 }}>

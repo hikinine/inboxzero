@@ -16,6 +16,7 @@ const ConnectorAuth     = lazy(() => import('./connectors/connector-auth.tsx').t
 const GmailOAuth        = lazy(() => import('./connectors/gmail-oauth.tsx').then(m => ({ default: m.GmailOAuthScreen })));
 const LinearSetup       = lazy(() => import('./connectors/linear-setup.tsx').then(m => ({ default: m.LinearSetupScreen })));
 const EventsPage        = lazy(() => import('./pages/events-page.tsx').then(m => ({ default: m.EventsPage })));
+const EventDetailPage   = lazy(() => import('./pages/event-detail-page.tsx').then(m => ({ default: m.EventDetailPage })));
 
 const S = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<div className="tk-main" />}>{children}</Suspense>
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
       { path: 'tasks',             element: <S><TasksPage /></S> },
       { path: 'agenda',            element: <S><AgendaScreen /></S> },
       { path: 'events',            element: <S><EventsPage /></S> },
+      { path: 'events/:eventId',   element: <S><EventDetailPage /></S> },
       { path: 'connectors',        element: <S><WithNav Component={ConnectorsList} /></S> },
       { path: 'connectors/hub',    element: <S><WithNav Component={ConnectorsHub} /></S> },
       { path: 'connectors/add',    element: <S><WithNav Component={ConnectorsAdd} /></S> },

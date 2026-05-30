@@ -20,6 +20,15 @@ export const eventController: FastifyPluginAsyncZod = async (app) => {
     },
   }, async (req) => svc.findByWorkspace(req.params.workspaceId));
 
+  app.get('/:workspaceId/events/:eventId', {
+    schema: {
+      tags: ['Events'],
+      operationId: 'getById',
+      params: EventParam,
+      response: { 200: EventResponseDto.nullable() },
+    },
+  }, async (req) => app.prisma.event.findUnique({ where: { id: req.params.eventId } }));
+
   app.get('/:workspaceId/events/pending', {
     schema: {
       tags: ['Events'],
