@@ -16,9 +16,17 @@ export class ConnectorsService {
     return this.prisma.connector.findUnique({ where: { id } });
   }
 
-  create(workspaceId: string, dto: CreateConnectorDto) {
-    return this.prisma.connector.create({
+  async create(workspaceId: string, dto: CreateConnectorDto) {
+    const connector = await this.prisma.connector.create({
       data: { workspaceId, ...dto, config: dto.config as any },
+    });
+
+    // Inject webhookUrl into config so the frontend can display it
+    const publicUrl = process.env['PUBLIC_URL'] ?? 'http://localhost:3061';
+    const webhookUrl = `${publicUrl}/webhooks/${connector.id}`;
+    return this.prisma.connector.update({
+      where: { id: connector.id },
+      data: { config: { ...(connector.config as object), webhookUrl } },
     });
   }
 

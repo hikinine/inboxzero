@@ -5,6 +5,7 @@ import { CorsPlugin } from './plugins/cors.plugin.js';
 import { OpenApiPlugin, generateOpenApi } from './plugins/openapi.plugin.js';
 import { ScalarPlugin } from './plugins/scalar.plugin.js';
 import { ZodValidatorPlugin } from './plugins/zod.plugin.js';
+import { WebhookController } from './webhooks/webhook.controller.js';
 
 export interface BootstrapOptions {
   listenHttp?: boolean;
@@ -24,6 +25,7 @@ export async function bootstrapApplication({
   await app.register(ZodValidatorPlugin);
   await app.register(OpenApiPlugin);
   if (generateScalar) await app.register(ScalarPlugin);
+  await app.register(WebhookController, { prefix: '/webhooks' });
   await app.register(AppModule);
   await app.ready();
 
