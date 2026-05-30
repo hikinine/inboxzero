@@ -86,7 +86,7 @@ html, body, #root {
 }
 
 /* ---- Main ---- */
-.tk-main { flex: 1; position: relative; overflow: hidden; }
+.tk-main { flex: 1; position: relative; overflow: hidden; box-shadow: -8px 0 24px rgba(0,0,0,0.55); }
 .tk-scroll { position: absolute; inset: 0; overflow-y: auto; }
 .tk-content { max-width: 720px; margin: 0 auto; padding: 76px 44px 56px; }
 .tk-wide { max-width: 980px; }
