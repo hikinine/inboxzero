@@ -15,18 +15,28 @@ export function WorkspaceSwitcher({ workspaces, activeSlug, onSwitch }: Props) {
   return (
     <div style={{ position: 'relative' }}>
       <div
+        onClick={() => setOpen((o) => !o)}
         style={{
-          width: 38, height: 38, borderRadius: 11,
+          display: 'flex', alignItems: 'center', gap: 9,
+          padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
+          transition: 'background 0.12s',
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+      >
+        <div style={{
+          width: 22, height: 22, borderRadius: 6, flexShrink: 0,
           background: active?.avatarColor ?? 'var(--accent)',
           color: '#06281a',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 700, fontSize: 16, cursor: 'pointer',
-          marginBottom: 38,
-        }}
-        onClick={() => setOpen((o) => !o)}
-        title={active?.name ?? 'Workspace'}
-      >
-        {active?.name?.[0]?.toUpperCase() ?? 't'}
+          fontWeight: 700, fontSize: 11,
+        }}>
+          {active?.name?.[0]?.toUpperCase() ?? 't'}
+        </div>
+        <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {active?.name ?? 'Workspace'}
+        </span>
+        <Icon name="chevronR" size={13} style={{ color: 'var(--text-faint)', transform: 'rotate(90deg)', flexShrink: 0 }} />
       </div>
 
       {open && (
