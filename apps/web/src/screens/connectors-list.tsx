@@ -127,6 +127,45 @@ export function ConnectorsListScreen({ onNavigate }: ConnectorsListProps) {
             </div>
           </div>
 
+          {/* Claude Code — sempre no topo */}
+          <div
+            onClick={() => onNavigate('connectors/claude')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 15,
+              padding: '14px 18px', marginBottom: 9,
+              background: 'var(--surface)', borderRadius: 14,
+              border: '1px solid rgba(217,119,87,0.25)',
+              cursor: 'pointer', transition: 'border-color 0.15s',
+            }}
+          >
+            {/* Ícone Claude Code */}
+            <div style={{
+              width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+              background: '#D97757',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(217,119,87,0.30), inset 0 1px 0 rgba(255,255,255,0.18)',
+            }}>
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="white"
+                strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 8l5 4-5 4" /><path d="M13 16h4" />
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 3 }}>Claude Code</div>
+              <div style={{ fontSize: 13, color: 'var(--text-dim)' }}>
+                Agente de código no seu workspace — lê, escreve e executa via MCP
+              </div>
+            </div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: 'rgba(217,119,87,0.12)', padding: '8px 13px', borderRadius: 10,
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: '#D97757' }}>Configurar</span>
+              <Icon name="arrowR" size={14} style={{ color: '#D97757' }} />
+            </div>
+          </div>
+
           {/* Connected */}
           {connected.length > 0 && (
             <>
