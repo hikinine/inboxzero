@@ -1,31 +1,44 @@
 import { Icon } from '../components/icon.tsx';
 
 const START = 8, END = 20, ROW = 58;
-
-const WEEK = [
-  { dow: 'dom', num: 25 },
-  { dow: 'seg', num: 26 },
-  { dow: 'ter', num: 27 },
-  { dow: 'qua', num: 28 },
-  { dow: 'qui', num: 29, active: true },
-  { dow: 'sex', num: 30 },
-  { dow: 'sáb', num: 31 },
-];
-
-const EVENTS = [
-  { h: 9,  m: 30, dur: 0.5,  t: 'Daily standup',           m2: 'Time de produto' },
-  { h: 11, m: 0,  dur: 0.75, t: '1:1 com o Rafael',        m2: 'Online' },
-  { h: 12, m: 30, dur: 1,    t: 'Almoço com a Marina',     m2: 'Café Lumi' },
-  { h: 14, m: 0,  dur: 1,    t: 'Reunião de design',       m2: 'Sala Aurora', accent: true },
-  { h: 16, m: 30, dur: 0.75, t: 'Call com a Vértice',      m2: 'Apresentação da proposta' },
-  { h: 19, m: 0,  dur: 1,    t: 'Jantar com a Marina',     m2: 'Restaurante Oro' },
-];
-
 function top(h: number, m = 0) { return (h - START) * ROW + (m / 60) * ROW; }
 
+const MOCK_EVENTS = [
+  { h: 9,  m: 30, dur: 0.5,  title: 'Daily standup',       sub: 'Time de produto' },
+  { h: 11, m: 0,  dur: 0.75, title: '1:1 com o Rafael',    sub: 'Online' },
+  { h: 12, m: 30, dur: 1,    title: 'Almoço com a Marina', sub: 'Café Lumi' },
+  { h: 14, m: 0,  dur: 1,    title: 'Reunião de design',   sub: 'Sala Aurora', accent: true },
+  { h: 16, m: 30, dur: 0.75, title: 'Call com a Vértice',  sub: 'Apresentação da proposta' },
+  { h: 19, m: 0,  dur: 1,    title: 'Jantar com a Marina', sub: 'Restaurante Oro' },
+];
+
+function buildWeek(today: Date) {
+  const DOW = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return {
+      dow:    DOW[i]!,
+      num:    d.getDate(),
+      active: d.toDateString() === today.toDateString(),
+    };
+  });
+}
+
 export function AgendaScreen() {
+  const now   = new Date();
+  const week  = buildWeek(now);
   const hours: number[] = [];
   for (let h = START; h <= END; h++) hours.push(h);
+
+  const nowTop = top(now.getHours(), now.getMinutes());
+  const nowLabel = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const showNowLine = now.getHours() >= START && now.getHours() < END;
+
+  const monthLabel = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const dateLabel  = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <div className="tk-main">
@@ -33,8 +46,8 @@ export function AgendaScreen() {
         <div className="tk-content tk-wide">
           <div className="tk-head">
             <div>
-              <h1 className="tk-greet">Maio 2026</h1>
-              <div className="tk-date">Quinta-feira, 29 de maio</div>
+              <h1 className="tk-greet" style={{ textTransform: 'capitalize' }}>{monthLabel}</h1>
+              <div className="tk-date" style={{ textTransform: 'capitalize' }}>{dateLabel}</div>
             </div>
             <div className="tk-headtools">
               <div className="tk-iconbtn"><Icon name="chevronL" size={19} /></div>
@@ -42,18 +55,16 @@ export function AgendaScreen() {
             </div>
           </div>
 
-          {/* Week strip */}
           <div className="tk-weekstrip">
-            {WEEK.map((d) => (
+            {week.map((d) => (
               <div key={d.num} className={`tk-day${d.active ? ' active' : ''}`}>
                 <div className="dow">{d.dow}</div>
                 <div className="num">{d.num}</div>
-                {(d.active || d.num === 27 || d.num === 30) && <div className="pip" />}
+                {d.active && <div className="pip" />}
               </div>
             ))}
           </div>
 
-          {/* Timeline */}
           <div className="tk-timeline" style={{ height: (END - START) * ROW + 12 }}>
             {hours.map((h) => (
               <div
@@ -67,27 +78,28 @@ export function AgendaScreen() {
             ))}
 
             <div className="tk-track">
-              {EVENTS.map((e, i) => (
+              {MOCK_EVENTS.map((e, i) => (
                 <div
                   key={i}
                   className={`tk-ev${e.accent ? ' is-accent' : ''}`}
                   style={{ top: top(e.h, e.m), height: e.dur * ROW - 8 }}
                 >
                   <div className="accentbar" />
-                  <div className="et">{e.t}</div>
+                  <div className="et">{e.title}</div>
                   {e.dur >= 1 && (
                     <div className="em">
-                      {String(e.h).padStart(2, '0')}:{String(e.m).padStart(2, '0')} · {e.m2}
+                      {String(e.h).padStart(2, '0')}:{String(e.m).padStart(2, '0')} · {e.sub}
                     </div>
                   )}
                 </div>
               ))}
             </div>
 
-            {/* "Agora" line at 13:20 */}
-            <div className="tk-now" style={{ top: top(13, 20) }}>
-              <span className="lbl">13:20</span>
-            </div>
+            {showNowLine && (
+              <div className="tk-now" style={{ top: nowTop }}>
+                <span className="lbl">{nowLabel}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
