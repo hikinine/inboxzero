@@ -114,7 +114,15 @@ export function ConnectorsAddScreen({ onNavigate }: ConnectorsAddProps) {
     },
   });
 
+  // Connectors with dedicated setup wizards navigate there first
+  const WIZARD_ROUTES: Record<string, string> = {
+    Linear: 'connectors/linear',
+    Gmail:  'connectors/gmail',
+  };
+
   const handleConnect = (brand: string) => {
+    const wizard = WIZARD_ROUTES[brand];
+    if (wizard) { onNavigate(wizard); return; }
     const type = BRAND_TO_TYPE[brand] ?? 'CUSTOM';
     createConnector({
       workspaceId: workspaceSlug!,

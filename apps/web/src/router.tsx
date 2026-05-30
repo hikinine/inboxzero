@@ -40,11 +40,11 @@ export const router = createBrowserRouter([
       { path: 'agenda',            element: <S><AgendaScreen /></S> },
       { path: 'events',            element: <S><EventsPage /></S> },
       { path: 'connectors',        element: <S><WithNav Component={ConnectorsHub} /></S> },
-      { path: 'connectors/:id',    element: <S><WithNav Component={ConnectorConfig} /></S> },
       { path: 'connectors/add',    element: <S><WithNav Component={ConnectorsAdd} /></S> },
       { path: 'connectors/auth',   element: <S><WithNav Component={ConnectorAuth} /></S> },
       { path: 'connectors/gmail',  element: <S><WithNav Component={GmailOAuth} /></S> },
       { path: 'connectors/linear', element: <S><WithNav Component={LinearSetup} /></S> },
+      { path: 'connectors/:id',    element: <S><WithNav Component={ConnectorConfig} /></S> },
     ],
   },
 ]);
