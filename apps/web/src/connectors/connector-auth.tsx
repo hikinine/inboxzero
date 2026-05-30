@@ -1,21 +1,13 @@
 import { Icon }              from '../components/icon.tsx';
-import { BRANDS, SCATTER, ROWS } from './brands.ts';
-function Tile({ brand, size = 60, radius = 17, style }: { brand: string; size?: number; radius?: number; style?: React.CSSProperties }) {
-  const b = BRANDS[brand];
-  if (!b) return null;
-  return (
-    <div className="tkc-tile" style={{ background: b.bg, color: b.dark ? '#16161A' : '#fff', width: size, height: size, borderRadius: radius, border: b.border ? '1px solid rgba(255,255,255,0.09)' : 'none', ...style }}>
-      <Icon name={b.icon} size={Math.round(size * 0.46)} />
-    </div>
-  );
-}
+import { SCATTER } from './brands.ts';
+import { BrandTile } from './brand-tile.tsx';
 
 function LeftPanel() {
   return (
     <div className="tkc-left">
       <div className="tkc-gridlines" />
       <div className="tkc-glow" />
-      {SCATTER.map((t, i) => <Tile key={i} brand={t.brand} style={{ left: t.left, top: t.top }} />)}
+      {SCATTER.map((t, i) => <BrandTile key={i} brand={t.brand} style={{ left: t.left, top: t.top }} />)}
       <div className="tkc-leftfade" />
       <div className="tkc-leftcap">
         <div className="h">Tudo o que importa, num lugar só.</div>
@@ -49,7 +41,7 @@ export function ConnectorAuthScreen({ onNavigate }: ConnectorAuthProps) {
       <div className="tk-overlay">
         <div className="tkc-connmodal">
           <div className="tkc-cm-head">
-            <Tile brand="Notion" size={48} radius={14} style={{ position: 'static' }} />
+            <BrandTile brand="Notion" size={48} radius={14} style={{ position: 'static' }} />
             <div style={{ flex: 1 }}>
               <div className="tkc-cm-title">Conectar Notion</div>
               <div className="tkc-cm-sub">

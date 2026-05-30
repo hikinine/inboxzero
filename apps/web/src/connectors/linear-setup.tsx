@@ -3,17 +3,7 @@ import { useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useConnectorsCreate, useConnectorsValidateKey } from '@tasky/sdk';
 import { Icon } from '../components/icon.tsx';
-import { BRANDS } from './brands.ts';
-
-function Tile({ brand, size = 60, radius = 17, style }: { brand: string; size?: number; radius?: number; style?: React.CSSProperties }) {
-  const b = BRANDS[brand];
-  if (!b) return null;
-  return (
-    <div className="tkc-tile" style={{ background: b.bg, color: b.dark ? '#16161A' : '#fff', width: size, height: size, borderRadius: radius, ...style }}>
-      <Icon name={b.icon} size={Math.round(size * 0.46)} />
-    </div>
-  );
-}
+import { BrandTile } from './brand-tile.tsx';
 
 function StepNode({ n, label, done, active }: { n: number; label: string; done?: boolean; active?: boolean }) {
   return (
@@ -118,7 +108,7 @@ export function LinearSetupScreen({ onNavigate }: LinearSetupProps) {
 
           {/* Header */}
           <div className="tkc-cm-head">
-            <Tile brand="Linear" size={48} radius={14} style={{ position: 'static' }} />
+            <BrandTile brand="Linear" size={48} radius={14} style={{ position: 'static' }} />
             <div style={{ flex: 1 }}>
               <div className="tkc-cm-title">Conectar Linear</div>
               <div className="tkc-cm-sub">

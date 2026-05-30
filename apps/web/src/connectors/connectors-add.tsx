@@ -2,38 +2,8 @@ import { useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useConnectorsCreate } from '@tasky/sdk';
 import { Icon }              from '../components/icon.tsx';
-import { BRANDS, SCATTER, ROWS } from './brands.ts';
-// ---- Brand tile (colored square icon) ----
-function Tile({
-  brand,
-  size = 60,
-  radius = 17,
-  style,
-}: {
-  brand: string;
-  size?: number;
-  radius?: number;
-  style?: React.CSSProperties;
-}) {
-  const b = BRANDS[brand];
-  if (!b) return null;
-  return (
-    <div
-      className="tkc-tile"
-      style={{
-        background: b.bg,
-        color: b.dark ? '#16161A' : '#fff',
-        width: size,
-        height: size,
-        borderRadius: radius,
-        border: b.border ? '1px solid rgba(255,255,255,0.09)' : 'none',
-        ...style,
-      }}
-    >
-      <Icon name={b.icon} size={Math.round(size * 0.46)} />
-    </div>
-  );
-}
+import { SCATTER, ROWS } from './brands.ts';
+import { BrandTile } from './brand-tile.tsx';
 
 // ---- Left decorative panel ----
 function LeftPanel() {
@@ -42,7 +12,7 @@ function LeftPanel() {
       <div className="tkc-gridlines" />
       <div className="tkc-glow" />
       {SCATTER.map((t, i) => (
-        <Tile key={i} brand={t.brand} style={{ left: t.left, top: t.top }} />
+        <BrandTile key={i} brand={t.brand} style={{ left: t.left, top: t.top }} />
       ))}
       <div className="tkc-leftfade" />
       <div className="tkc-leftcap">
@@ -74,7 +44,7 @@ function Row({
 }) {
   return (
     <div className={`tkc-row${on ? ' on' : ''}`} onClick={onConnect}>
-      <Tile brand={brand} size={38} radius={11} style={{ position: 'static', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)' }} />
+      <BrandTile brand={brand} size={38} radius={11} style={{ position: 'static', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14)' }} />
       <div className="tkc-rmid">
         <div className="tkc-rname">
           {brand}
