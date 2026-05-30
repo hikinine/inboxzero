@@ -1,6 +1,4 @@
 import { Icon } from '../components/icon.tsx';
-import type { Screen } from '../app.tsx';
-
 function CodeField({ value }: { value: string }) {
   return (
     <div className="tk-code">
@@ -23,7 +21,7 @@ function EventRow({ name, desc, on }: { name: string; desc: string; on?: boolean
 }
 
 interface ConnectorConfigProps {
-  onNavigate: (s: Screen) => void;
+  onNavigate: (path: string) => void;
 }
 
 export function ConnectorConfigScreen({ onNavigate }: ConnectorConfigProps) {

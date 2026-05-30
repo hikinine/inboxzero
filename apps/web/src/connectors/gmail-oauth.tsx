@@ -1,7 +1,5 @@
 import { Icon } from '../components/icon.tsx';
 import { BRANDS } from './brands.ts';
-import type { Screen } from '../app.tsx';
-
 function Tile({ brand, size = 60, radius = 17, style }: { brand: string; size?: number; radius?: number; style?: React.CSSProperties }) {
   const b = BRANDS[brand];
   if (!b) return null;
@@ -38,7 +36,7 @@ function PermScope({ title, d }: { title: string; d: string }) {
 }
 
 interface GmailOAuthProps {
-  onNavigate: (s: Screen) => void;
+  onNavigate: (path: string) => void;
 }
 
 export function GmailOAuthScreen({ onNavigate }: GmailOAuthProps) {

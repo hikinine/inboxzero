@@ -1,7 +1,5 @@
 import { Icon } from '../components/icon.tsx';
 import { BRANDS } from './brands.ts';
-import type { Screen } from '../app.tsx';
-
 function Tile({ brand, size = 60, radius = 17, style }: { brand: string; size?: number; radius?: number; style?: React.CSSProperties }) {
   const b = BRANDS[brand];
   if (!b) return null;
@@ -41,7 +39,7 @@ function ConnEventRow({ name, desc, on }: { name: string; desc: string; on?: boo
 }
 
 interface LinearSetupProps {
-  onNavigate: (s: Screen) => void;
+  onNavigate: (path: string) => void;
 }
 
 export function LinearSetupScreen({ onNavigate }: LinearSetupProps) {

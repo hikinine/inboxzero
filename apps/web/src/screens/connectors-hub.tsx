@@ -1,5 +1,4 @@
 import { Icon } from '../components/icon.tsx';
-import type { Screen } from '../app.tsx';
 import type { IconName } from '../components/icon.tsx';
 
 interface ConnectorProps {
@@ -28,7 +27,7 @@ function Connector({ icon, name, status, on, off, onClick }: ConnectorProps) {
 }
 
 interface ConnectorsHubProps {
-  onNavigate: (s: Screen) => void;
+  onNavigate: (path: string) => void;
 }
 
 export function ConnectorsHubScreen({ onNavigate }: ConnectorsHubProps) {

@@ -1,8 +1,7 @@
 import { Icon } from '../components/icon.tsx';
-import type { Screen } from '../app.tsx';
 
 interface DashboardProps {
-  onNavigate: (s: Screen) => void;
+  onNavigate: (path: string) => void;
 }
 
 export function DashboardScreen({ onNavigate }: DashboardProps) {

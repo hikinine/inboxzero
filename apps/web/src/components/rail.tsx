@@ -1,30 +1,32 @@
 import { Icon } from './icon.tsx';
-import type { Screen } from '../app.tsx';
+import { WorkspaceSwitcher } from './workspace-switcher.tsx';
+import type { WorkspaceInfo } from '../store/app-store.ts';
 
 interface RailProps {
-  active: Screen;
-  onNavigate: (screen: Screen) => void;
+  active:            string;
+  workspaces:        WorkspaceInfo[];
+  activeSlug:        string;
+  onNavigate:        (path: string) => void;
+  onSwitchWorkspace: (slug: string) => void;
 }
 
-const NAV_ITEMS: { id: Screen; icon: Parameters<typeof Icon>[0]['name']; label: string }[] = [
-  { id: 'dashboard', icon: 'home',      label: 'Início'   },
-  { id: 'inbox',     icon: 'inbox',     label: 'Inbox'    },
-  { id: 'tasks',     icon: 'checklist', label: 'Tarefas'  },
-  { id: 'agenda',    icon: 'calendar',  label: 'Agenda'   },
+const NAV_ITEMS: { id: string; icon: Parameters<typeof Icon>[0]['name']; label: string }[] = [
+  { id: 'dashboard', icon: 'home',      label: 'Início'  },
+  { id: 'inbox',     icon: 'inbox',     label: 'Inbox'   },
+  { id: 'tasks',     icon: 'checklist', label: 'Tarefas' },
+  { id: 'agenda',    icon: 'calendar',  label: 'Agenda'  },
 ];
 
-export function Rail({ active, onNavigate }: RailProps) {
-  const isConnectors =
-    active === 'connectors' ||
-    active === 'connector-config' ||
-    active === 'onboarding-add' ||
-    active === 'onboarding-auth' ||
-    active === 'onboarding-gmail' ||
-    active === 'onboarding-linear';
+export function Rail({ active, workspaces, activeSlug, onNavigate, onSwitchWorkspace }: RailProps) {
+  const isConnectors = active === 'connectors' || active === 'events';
 
   return (
     <div className="tk-rail">
-      <div className="tk-mark" onClick={() => onNavigate('dashboard')}>t</div>
+      <WorkspaceSwitcher
+        workspaces={workspaces}
+        activeSlug={activeSlug}
+        onSwitch={onSwitchWorkspace}
+      />
 
       <div className="tk-nav">
         {NAV_ITEMS.map((item) => (

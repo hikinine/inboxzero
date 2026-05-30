@@ -1,7 +1,5 @@
 import { Icon }              from '../components/icon.tsx';
 import { BRANDS, SCATTER, ROWS } from './brands.ts';
-import type { Screen }       from '../app.tsx';
-
 // ---- Brand tile (colored square icon) ----
 function Tile({
   brand,
@@ -90,7 +88,7 @@ function Row({
 }
 
 interface ConnectorsAddProps {
-  onNavigate: (s: Screen) => void;
+  onNavigate: (path: string) => void;
 }
 
 export function ConnectorsAddScreen({ onNavigate }: ConnectorsAddProps) {
