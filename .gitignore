@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.turbo/
+*.env
+!.env.example
+openapi.json
+react-query/
+.DS_Store

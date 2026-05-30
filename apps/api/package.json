@@ -1,0 +1,38 @@
+{
+  "name": "@tasky/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc",
+    "generate:openapi": "tsx src/main.ts --generate-openapi-and-exit",
+    "db-reset": "prisma migrate reset --force",
+    "db-migrate": "prisma migrate dev",
+    "db-generate": "prisma generate",
+    "db-deploy": "prisma migrate deploy",
+    "lint": "biome check --write .",
+    "lint-fix": "biome check --write ."
+  },
+  "dependencies": {
+    "fastify": "catalog:",
+    "fastify-plugin": "catalog:",
+    "@fastify/cors": "catalog:",
+    "@fastify/swagger": "catalog:",
+    "@scalar/fastify-api-reference": "^1.28.31",
+    "fastify-type-provider-zod": "^4.0.2",
+    "@prisma/client": "5.15.0",
+    "zod": "catalog:",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "prisma": "5.15.0"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  }
+}

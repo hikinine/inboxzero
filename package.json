@@ -1,0 +1,36 @@
+{
+  "name": "tasky",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.11.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev --filter ./apps/*",
+    "build": "turbo run build --concurrency 100%",
+    "lint": "biome check .",
+    "lint-fix": "biome check --write .",
+    "lint-sdk": "biome check --fix --unsafe ./sdk",
+    "db-up": "docker compose -f infra/docker-compose.yml up -d",
+    "db-reset": "dotenv -e .env -- turbo run db-reset --",
+    "db-generate": "dotenv -e .env -- turbo run db-generate --",
+    "db-migrate": "dotenv -e .env -- turbo run db-migrate --",
+    "generate:openapi": "dotenv -e .env -- turbo run generate:openapi --ui=stream",
+    "orval": "turbo run orval --ui=stream && pnpm lint-sdk"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "dotenv-cli": "^8.0.0",
+    "turbo": "^2.4.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  }
+}

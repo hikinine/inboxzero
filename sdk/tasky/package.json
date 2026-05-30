@@ -1,0 +1,22 @@
+{
+  "name": "@tasky/sdk",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "orval": "npx orval@7.4.0",
+    "lint-sdk": "biome check --fix --unsafe ./"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "orval": "catalog:"
+  },
+  "peerDependencies": {
+    "axios": "^1.8.3",
+    "@tanstack/react-query": "^5.74.4"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./http": "./http/index.ts"
+  }
+}
