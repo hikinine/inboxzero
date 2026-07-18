@@ -1,0 +1,11 @@
+# Ignore para o build da imagem do catalog (contexto = raiz do repo).
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+.git
+**/.env
+**/.env.*
+**/*.log
+apps/desktop/src-tauri/target
+**/.DS_Store

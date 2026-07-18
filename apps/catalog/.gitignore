@@ -1,0 +1,12 @@
+/node_modules
+/.next
+/out
+/build
+next-env.d.ts
+.env
+.env*.local
+tsconfig.tsbuildinfo
+
+# Artefatos gerados pelo import de unDraw (regeneráveis: `node scripts/import-undraw.mjs fetch`)
+scripts/undraw-manifest.json
+scripts/undraw-done.json
