@@ -1,6 +1,7 @@
 import { promises as dnsp } from 'node:dns';
 import path from 'node:path';
 import { DisposableEmailChecker } from '@usex/disposable-email-domains';
+import { checkMicrosoft365, detectProvider } from './providers';
 import { type MailboxResult, verifyMailbox } from './smtp';
 
 // Provedores legítimos que NÃO devem ser marcados como descartáveis.
@@ -49,8 +50,10 @@ export type CheckOutcome = {
   reason: string | null;
   mxChecked: boolean;
   hasMx: boolean | null;
+  smtpProvider: string | null; // rótulo do provedor (microsoft, g-suite, gmail…)
   smtpChecked: boolean;
-  mailbox: MailboxResult | null; // resultado da prova SMTP (exists/not_found/catch_all/unknown)
+  mailbox: MailboxResult | null; // resultado da prova de caixa (exists/not_found/catch_all/unknown)
+  method: 'microsoft' | 'smtp' | null; // como a caixa foi checada
   durationMs: number | null;
 };
 
@@ -118,8 +121,10 @@ function baseOutcome(raw: any): CheckOutcome {
     reason: !isFormatValid ? 'formato_invalido' : isDisposable ? 'dominio_descartavel' : null,
     mxChecked: false,
     hasMx: null,
+    smtpProvider: null,
     smtpChecked: false,
     mailbox: null,
+    method: null,
     durationMs: typeof raw?.validationTime === 'number' ? raw.validationTime : null,
   };
 }
@@ -137,15 +142,17 @@ export async function verifyEmails(
 
   if (!doMx) return outcomes;
 
-  // 1) MX por domínio (dedupe + concorrência).
+  // 1) MX por domínio (dedupe + concorrência) + fingerprint do provedor.
   const domains = [...new Set(outcomes.filter((o) => o.status === 'valid' && o.domain).map((o) => o.domain as string))];
   const mxMap = await mapLimited(domains, 20, resolveMx);
   for (const o of outcomes) {
-    if (o.status !== 'valid' || !o.domain) continue;
-    const info = mxMap.get(o.domain) ?? { has: null, host: null };
+    if (!o.domain) continue;
+    const info = mxMap.get(o.domain);
+    if (!info) continue;
     o.mxChecked = true;
     o.hasMx = info.has;
-    if (info.has === false) {
+    o.smtpProvider = detectProvider(info.host).label;
+    if (o.status === 'valid' && info.has === false) {
       o.status = 'no_mx';
       o.isValid = false;
       o.reason = 'sem_registro_mx';
@@ -154,18 +161,32 @@ export async function verifyEmails(
 
   if (!doSmtp) return outcomes;
 
-  // 2) SMTP (RCPT TO) só para os que passaram até aqui e têm host MX. Concorrência baixa.
+  // 2) Verificação de caixa CONSCIENTE DO PROVEDOR. Concorrência baixa (throttle/reputação).
   const candidates = outcomes.filter((o) => o.status === 'valid' && o.domain);
-  const smtpMap = await mapLimited(candidates, 4, async (o) => {
+  const boxMap = await mapLimited(candidates, 4, async (o) => {
     const host = (mxMap.get(o.domain as string) ?? {}).host;
-    if (!host) return { result: 'unknown' as MailboxResult, code: null };
-    return verifyMailbox(o.email, host, { timeoutMs: 8000 });
+    const { provider } = detectProvider(host);
+
+    // Microsoft 365: GetCredentialType é definitivo (até em catch-all) e mais rápido que SMTP.
+    if (provider === 'microsoft') {
+      const r = await checkMicrosoft365(o.email);
+      if (r !== 'unknown') return { result: r, reason: undefined as string | undefined, method: 'microsoft' as const };
+      // inconclusivo (throttle/federado) → tenta SMTP como fallback
+      if (host) return { ...(await verifyMailbox(o.email, host)), method: 'smtp' as const };
+      return { result: 'unknown' as MailboxResult, reason: undefined as string | undefined, method: null };
+    }
+
+    // Demais provedores: SMTP RCPT (com detecção de catch-all).
+    if (!host) return { result: 'unknown' as MailboxResult, reason: undefined as string | undefined, method: null };
+    return { ...(await verifyMailbox(o.email, host, { timeoutMs: 8000 })), method: 'smtp' as const };
   });
+
   for (const o of candidates) {
-    const r = smtpMap.get(o);
+    const r = boxMap.get(o);
     if (!r) continue;
     o.smtpChecked = true;
     o.mailbox = r.result;
+    o.method = r.method;
     if (r.result === 'not_found') {
       o.status = 'mailbox_not_found';
       o.isValid = false;
@@ -175,7 +196,7 @@ export async function verifyEmails(
       o.reason = 'catch_all';
     } else if (r.result === 'unknown') {
       o.status = 'unknown';
-      o.reason = r.reason === 'port25_blocked' ? 'smtp_indisponivel' : 'caixa_indeterminada';
+      o.reason = (r as any).reason === 'port25_blocked' ? 'smtp_indisponivel' : 'caixa_indeterminada';
     }
     // 'exists' → mantém status 'valid'
   }

@@ -31,8 +31,10 @@ type ApiResult = {
   reason: string | null;
   mxChecked: boolean;
   hasMx: boolean | null;
+  smtpProvider: string | null;
   smtpChecked: boolean;
   mailbox: string | null;
+  method: string | null;
   durationMs: number;
 };
 
@@ -146,9 +148,14 @@ export function HeroDemo() {
   const meta = data
     ? [
         { k: 'domínio', v: data.domain ?? '—' },
+        { k: 'provedor', v: data.smtpProvider ?? '—' },
         { k: 'mx', v: data.mxChecked ? (data.hasMx === true ? 'sim' : data.hasMx === false ? 'não' : '—') : 'não checado' },
-        { k: 'caixa (smtp)', v: data.smtpChecked ? (MAILBOX_LABEL[data.mailbox ?? ''] ?? '—') : 'não checada' },
-        { k: 'confiança', v: `${data.confidence}/100` },
+        {
+          k: 'caixa',
+          v: data.smtpChecked
+            ? `${MAILBOX_LABEL[data.mailbox ?? ''] ?? '—'}${data.method === 'microsoft' ? ' · via MS' : ''}`
+            : 'não checada',
+        },
         { k: 'motivo', v: data.reason ?? '—' },
         { k: 'tempo', v: `${data.durationMs} ms` },
       ]

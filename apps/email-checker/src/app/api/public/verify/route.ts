@@ -58,8 +58,10 @@ export async function POST(req: NextRequest) {
     reason: o.reason,
     mxChecked: o.mxChecked,
     hasMx: o.hasMx,
+    smtpProvider: o.smtpProvider,
     smtpChecked: o.smtpChecked,
     mailbox: o.mailbox,
+    method: o.method,
     durationMs,
   });
 }
