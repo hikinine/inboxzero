@@ -1,0 +1,13 @@
+{
+  "name": "clickmax",
+  "owner": {
+    "name": "Clickmax / Bilhon"
+  },
+  "plugins": [
+    {
+      "name": "svg-catalog",
+      "source": "./plugins/svg-catalog",
+      "description": "Skills para criar e consumir os SVGs do catálogo Clickmax (hiki9.inboxzero.space)."
+    }
+  ]
+}

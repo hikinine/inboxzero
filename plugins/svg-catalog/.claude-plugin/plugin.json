@@ -1,0 +1,5 @@
+{
+  "name": "svg-catalog",
+  "description": "Criar e consumir ilustrações SVG do catálogo Clickmax (hiki9.inboxzero.space): autoria no padrão CX com render-check e publicação via MCP, e busca/uso das peças existentes.",
+  "version": "1.0.0"
+}
