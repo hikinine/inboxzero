@@ -7,12 +7,17 @@ import { rateLimit } from '@/lib/ratelimit';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Limites da demo pública (por IP, janela de 10 min). Ajustáveis por env sem rebuild.
+const WINDOW_MS = 10 * 60 * 1000;
+const PUB_LIMIT = Number.parseInt(process.env.PUBLIC_RATE_LIMIT ?? '100', 10) || 100;
+const PUB_SMTP_LIMIT = Number.parseInt(process.env.PUBLIC_SMTP_RATE_LIMIT ?? '50', 10) || 50;
+
 // POST /api/public/verify — checagem grátis, SEM auth (demo da landing).
 // Aceita { email, mx?, smtp? }. Não consome créditos e não grava em EmailCheck (só AuditLog).
 // Rate-limit por IP; SMTP tem um teto próprio, mais apertado (protege a reputação do nosso IP).
 export async function POST(req: NextRequest) {
   const { ip, userAgent } = requestMeta(req);
-  const rl = rateLimit(`pub:${ip ?? 'unknown'}`, 20, 10 * 60 * 1000);
+  const rl = rateLimit(`pub:${ip ?? 'unknown'}`, PUB_LIMIT, WINDOW_MS);
   if (!rl.ok) {
     return apiError(429, 'rate_limited', 'Muitas verificações deste IP. Crie uma conta para checar mais.', {
       retryAfterSeconds: Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000)),
@@ -33,7 +38,7 @@ export async function POST(req: NextRequest) {
   const smtp = body?.smtp === true;
 
   if (smtp) {
-    const rls = rateLimit(`pub-smtp:${ip ?? 'unknown'}`, 8, 10 * 60 * 1000);
+    const rls = rateLimit(`pub-smtp:${ip ?? 'unknown'}`, PUB_SMTP_LIMIT, WINDOW_MS);
     if (!rls.ok) {
       return apiError(429, 'smtp_rate_limited', 'Limite de verificações de caixa (SMTP) deste IP. Crie uma conta para continuar.', {
         retryAfterSeconds: Math.max(1, Math.ceil((rls.resetAt - Date.now()) / 1000)),
