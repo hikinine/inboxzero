@@ -28,24 +28,28 @@ Duas skills para trabalhar com o catálogo de ilustrações:
 | `svg-catalog-create` | Criar ilustrações no padrão CX/Clickmax (regras de autoria, marca, tokens, render-check) e publicar no catálogo via MCP |
 | `svg-catalog-use` | Buscar e usar peças que já existem (busca por keyword/tag/coleção, como embutir, como recolorir) |
 
-### Como instalar
+### Como usar
 
-Dentro do Claude Code, **de qualquer projeto**:
+**Trabalhando neste repo: não precisa instalar nada.** As skills estão em
+`.claude/skills/` (symlinks para `plugins/svg-catalog/skills/`), então quem clonar
+o tasky já as recebe — é só aceitar o diálogo de confiança do projeto na primeira vez.
+
+Depois é só pedir naturalmente (*"cria uns svgs de funil pro catálogo"*, *"pega uma
+ilustração de dashboard da collection CX"*) — elas disparam sozinhas.
+
+### Usar fora do tasky (opcional)
+
+Para ter as skills em **outros projetos**, instale o plugin. Isso exige o painel de
+plugins, disponível num **`claude` interativo no terminal** (em alguns ambientes o
+`/plugin` não existe):
 
 ```
 /plugin marketplace add hikinine/inboxzero
 /plugin install svg-catalog@clickmax
 ```
 
-Confira em `/plugin` → aba **Installed**. Depois é só pedir naturalmente
-(*"cria uns svgs de funil pro catálogo"*, *"pega uma ilustração de dashboard da
-collection CX"*) — as skills disparam sozinhas.
-
-Para atualizar quando as skills mudarem:
-
-```
-/plugin marketplace update clickmax
-```
+Confira em `/plugin` → aba **Installed**; para atualizar, `/plugin marketplace update clickmax`.
+Os comandos vão no **prompt do Claude Code**, não no shell.
 
 ### Pré-requisito: acesso ao catálogo
 

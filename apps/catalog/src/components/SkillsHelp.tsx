@@ -64,16 +64,30 @@ export function SkillsHelp() {
                 que já existem).
               </p>
 
+              <div className="rounded-md border border-emerald-800/50 bg-emerald-950/20 p-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-400">
+                  No repo tasky: já vem instalado
+                </p>
+                <p className="mt-1.5 text-xs text-neutral-400">
+                  As skills vivem em <code className="rounded bg-neutral-800 px-1">.claude/skills/</code> do monorepo —
+                  quem clona já as recebe, sem comando nenhum. Só aceite o diálogo de confiança do projeto na primeira
+                  vez.
+                </p>
+              </div>
+
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">1. Instalar</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    1. Usar fora do tasky (opcional)
+                  </span>
                   <CopyButton value={INSTALL} />
                 </div>
                 <pre className="overflow-x-auto rounded-md border border-neutral-800 bg-neutral-950 p-3 text-xs leading-relaxed text-neutral-200">
                   {INSTALL}
                 </pre>
                 <p className="mt-1.5 text-xs text-neutral-500">
-                  Rode dentro do Claude Code, de qualquer projeto. Confira em <code>/plugin</code> → aba Installed.
+                  No <strong className="text-neutral-400">prompt do Claude Code</strong> (não no shell), num{' '}
+                  <code>claude</code> interativo de terminal — em alguns ambientes o <code>/plugin</code> não existe.
                 </p>
               </div>
 
