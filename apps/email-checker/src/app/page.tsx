@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { CxMark } from '@/components/CxMark';
 import { AutomationFlow } from '@/components/landing/AutomationFlow';
 import { HeroDemo } from '@/components/landing/HeroDemo';
 import { ApiShowcase, AuditLedger, Pipeline, Reveal, Stats, VerdictTicker } from '@/components/landing/Sections';
@@ -28,8 +29,9 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-graphite/70 bg-void/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-page items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 text-[15px] text-white" style={{ fontWeight: 510 }}>
-            <ShieldCheck size={18} className="text-brand" />
-            Email Checker
+            <CxMark size={19} />
+            MX Check
+            <span className="mono ml-1 hidden text-[10px] text-ash sm:inline">por Clickmax</span>
           </Link>
           <nav className="flex items-center gap-1 text-[13px]">
             <Link href="/docs" className="rounded-md px-3 py-1.5 text-mist hover:bg-white/5">
@@ -57,7 +59,9 @@ export default async function LandingPage() {
       <section className="ec-floor">
         <div className="mx-auto max-w-page px-6 pb-20 pt-24 text-center sm:pt-28">
           <Reveal>
-            <span className="badge mx-auto bg-white/5 !px-2.5 text-fog">API de validação de e-mail</span>
+            <span className="badge mx-auto inline-flex items-center gap-1.5 bg-white/5 !px-2.5 text-fog">
+              <CxMark size={13} /> MX Check — o “CX Check” da Clickmax
+            </span>
           </Reveal>
           <Reveal delay={80}>
             <h1 className="display mx-auto mt-5 max-w-3xl text-[44px] sm:text-[64px]">Esse e-mail existe?</h1>
@@ -137,7 +141,7 @@ export default async function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/shots/dashboard.png"
-              alt="Dashboard do Email Checker: créditos, API keys, playground e histórico de checagens"
+              alt="Dashboard do MX Check: créditos, API keys, playground e histórico de checagens"
               className="w-full rounded-lg border border-graphite"
             />
           </div>
@@ -187,7 +191,7 @@ export default async function LandingPage() {
               operação. Logins, chaves e checagens entram na trilha de auditoria — com IP e user-agent.
             </p>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/illustrations/verify-data.svg" alt="" className="mt-8 hidden w-72 opacity-90 lg:block" />
+            <img src="/illustrations/cx-convergencia.svg" alt="" className="mt-8 hidden w-80 max-w-full opacity-95 lg:block" />
           </Reveal>
         </div>
       </section>
@@ -247,7 +251,7 @@ export default async function LandingPage() {
       <section className="hairline-t">
         <div className="mx-auto flex max-w-page flex-col items-center gap-8 px-6 py-28 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/illustrations/mail-sent.svg" alt="" className="w-40 opacity-80" />
+          <img src="/illustrations/cx-jornada.svg" alt="" className="w-full max-w-lg opacity-95" />
           <Reveal>
             <h2 className="display mx-auto max-w-2xl text-[36px] sm:text-[48px]">Pare de enviar para o vazio.</h2>
           </Reveal>
@@ -262,8 +266,9 @@ export default async function LandingPage() {
       <footer className="hairline-t">
         <div className="mx-auto flex max-w-page flex-col items-center justify-between gap-3 px-6 py-8 text-[12.5px] text-ash sm:flex-row">
           <span className="flex items-center gap-2">
-            <ShieldCheck size={14} className="text-fog" />
-            Email Checker
+            <CxMark size={15} />
+            MX Check
+            <span className="text-ash">· por Clickmax</span>
           </span>
           <div className="flex items-center gap-5">
             <Link href="/docs" className="hover:text-fog">

@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'sw
 const mono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-mono', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Email Checker — esse e-mail existe?',
+  title: 'MX Check — esse e-mail existe?',
   description:
     'Valide e-mails antes de enviar: formato, domínios descartáveis, MX e existência da caixa via SMTP. API por créditos, batch e trilha de auditoria completa.',
 };

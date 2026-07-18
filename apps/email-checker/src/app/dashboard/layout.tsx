@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { ShieldCheck } from 'lucide-react';
+import { CxMark } from '@/components/CxMark';
 import { DashboardNav } from '@/components/DashboardNav';
 import { getSessionUser } from '@/lib/auth';
 
@@ -14,7 +14,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="mx-auto flex min-h-screen max-w-6xl gap-6 px-4 py-6">
       <aside className="hidden w-56 shrink-0 flex-col sm:flex">
         <Link href="/" className="mb-6 flex items-center gap-2 px-2 font-bold">
-          <ShieldCheck className="text-brand" size={20} /> Email Checker
+          <CxMark size={18} /> MX Check
         </Link>
         <DashboardNav />
         <div className="mt-auto rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--border)' }}>

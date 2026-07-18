@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
+import { CxMark } from '@/components/CxMark';
 import { CopyButton } from '@/components/CopyButton';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,7 @@ export default function DocsPage() {
     <main className="mx-auto max-w-3xl px-6 py-8">
       <div className="flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold">
-          <ShieldCheck className="text-brand" size={20} /> Email Checker
+          <CxMark size={18} /> MX Check
         </Link>
         <Link href="/dashboard" className="btn-ghost">
           Dashboard
