@@ -176,15 +176,12 @@ export async function verifyEmails(
       return { result: 'unknown' as MailboxResult, reason: undefined as string | undefined, method: null };
     }
 
-    // Outlook CONSUMER (hotmail/outlook/live): GetCredentialType mente (IfExistsResult=1 pra todos) e
-    // o SMTP não responde de IP não-reputado. NUNCA afirmar not_found — devolve indeterminado.
-    if (provider === 'microsoft-consumer') {
-      return { result: 'unknown' as MailboxResult, reason: 'consumer_indeterminado', method: null };
-    }
-
-    // Demais provedores: SMTP RCPT (com detecção de catch-all).
+    // Outlook CONSUMER (hotmail/outlook/live) e demais provedores: SMTP RCPT (com detecção de catch-all).
+    // A GetCredentialType NÃO serve p/ consumer (mente), então aqui é SMTP. De um IP LIMPO (não em
+    // blocklist) o Outlook consumer responde a verdade no RCPT; de IP sujo ele bloqueia no MAIL FROM
+    // (→ verifyMailbox devolve unknown/mail_from_rejeitado, nunca not_found). Seguro nos dois casos.
     if (!host) return { result: 'unknown' as MailboxResult, reason: undefined as string | undefined, method: null };
-    return { ...(await verifyMailbox(o.email, host, { timeoutMs: 8000 })), method: 'smtp' as const };
+    return { ...(await verifyMailbox(o.email, host, { timeoutMs: 12000 })), method: 'smtp' as const };
   });
 
   for (const o of candidates) {
