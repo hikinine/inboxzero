@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Check, Copy, Download, Loader2, Search, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, Download, Loader2, Search, Trash2, X } from 'lucide-react';
 import { CopyButton } from './CopyButton';
 
 export interface ScreenMeta {
@@ -215,10 +215,9 @@ ${lines}
     }
   }
 
-  const toggle = (key: 'collection' | 'tag', val: string) =>
-    setFilters((f) => ({ ...f, [key]: f[key] === val ? '' : val }));
-
   const anyFilter = !!(filters.q || filters.collection || filters.tag);
+  const activeCollection = facets.collections.find((c) => c.slug === filters.collection);
+  const activeTag = facets.tags.find((t) => t.slug === filters.tag);
 
   return (
     <div className={`space-y-5 ${selCount > 0 ? 'pb-28' : ''}`}>
@@ -232,29 +231,45 @@ ${lines}
         />
       </div>
 
-      {facets.collections.length > 0 && (
-        <FacetRow label="Coleções" facets={facets.collections} active={filters.collection} onToggle={(slug) => toggle('collection', slug)} />
-      )}
-      {facets.tags.length > 0 && (
-        <FacetRow label="Tags" facets={facets.tags} active={filters.tag} onToggle={(slug) => toggle('tag', slug)} />
-      )}
+      {/* Barra de filtros compacta: dropdowns com busca em vez de parede de pills.
+          Escala para centenas de tags sem empurrar o grid para fora da tela. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterMenu
+          label="Coleção"
+          facets={facets.collections}
+          active={filters.collection}
+          onPick={(slug) => setFilters((f) => ({ ...f, collection: slug }))}
+        />
+        <FilterMenu
+          label="Tag"
+          facets={facets.tags}
+          active={filters.tag}
+          onPick={(slug) => setFilters((f) => ({ ...f, tag: slug }))}
+          searchable
+        />
 
-      <div className="flex items-center gap-3 text-sm text-neutral-500">
-        <span>
-          {total != null ? `${total} tela${total === 1 ? '' : 's'}` : `${items.length} carregada${items.length === 1 ? '' : 's'}`}
-        </span>
-        {anyFilter && (
-          <button
-            onClick={() => {
-              setSearchInput('');
-              setFilters({ q: '', collection: '', tag: '' });
-            }}
-            className="inline-flex items-center gap-1 text-neutral-400 hover:text-neutral-200"
-          >
-            <X className="h-3.5 w-3.5" />
-            Limpar filtros
-          </button>
+        {activeCollection && (
+          <FilterChip label={activeCollection.name} onClear={() => setFilters((f) => ({ ...f, collection: '' }))} />
         )}
+        {activeTag && <FilterChip label={activeTag.name} onClear={() => setFilters((f) => ({ ...f, tag: '' }))} />}
+
+        <div className="ml-auto flex items-center gap-3 text-sm text-neutral-500">
+          <span>
+            {total != null ? `${total} tela${total === 1 ? '' : 's'}` : `${items.length} carregada${items.length === 1 ? '' : 's'}`}
+          </span>
+          {anyFilter && (
+            <button
+              onClick={() => {
+                setSearchInput('');
+                setFilters({ q: '', collection: '', tag: '' });
+              }}
+              className="inline-flex items-center gap-1 text-neutral-400 hover:text-neutral-200"
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpar
+            </button>
+          )}
+        </div>
       </div>
 
       {items.length === 0 && !loading ? (
@@ -371,31 +386,126 @@ ${lines}
   );
 }
 
-function FacetRow({
+// Chip do filtro ativo — deixa óbvio o que está aplicado sem ocupar a tela.
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-xs text-white">
+      {label}
+      <button onClick={onClear} aria-label={`Remover filtro ${label}`} className="text-emerald-100 hover:text-white">
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
+const norm = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+// Dropdown de faceta. Esconde facetas vazias, ordena por uso e permite buscar —
+// é o que faz a UI aguentar centenas de tags.
+function FilterMenu({
   label,
   facets,
   active,
-  onToggle,
+  onPick,
+  searchable = false,
 }: {
   label: string;
   facets: Facet[];
   active: string;
-  onToggle: (slug: string) => void;
+  onPick: (slug: string) => void;
+  searchable?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const options = useMemo(
+    () =>
+      facets
+        .filter((f) => f.count > 0) // esconde faceta vazia (era só ruído)
+        .filter((f) => !q || norm(f.name).includes(norm(q)))
+        .sort((a, b) => b.count - a.count), // mais usadas primeiro
+    [facets, q],
+  );
+
+  const activeFacet = facets.find((f) => f.slug === active);
+
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs">
-      <span className="mr-1 text-neutral-600">{label}:</span>
-      {facets.map((f) => (
-        <button
-          key={f.slug}
-          onClick={() => onToggle(f.slug)}
-          className={`rounded-full px-3 py-1 transition ${
-            active === f.slug ? 'bg-emerald-600 text-white' : 'border border-neutral-800 text-neutral-300 hover:border-neutral-600'
-          }`}
-        >
-          {f.name} <span className={active === f.slug ? 'text-emerald-100' : 'text-neutral-500'}>{f.count}</span>
-        </button>
-      ))}
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition ${
+          activeFacet
+            ? 'border-emerald-700 bg-emerald-950/40 text-emerald-300'
+            : 'border-neutral-800 text-neutral-300 hover:border-neutral-600'
+        }`}
+      >
+        {label}
+        <ChevronDown className={`h-3.5 w-3.5 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute left-0 z-30 mt-1 w-64 rounded-md border border-neutral-800 bg-neutral-900 p-1 shadow-xl">
+          {searchable && (
+            <input
+              autoFocus
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder={`Buscar ${label.toLowerCase()}…`}
+              className="mb-1 w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+            />
+          )}
+          <div className="max-h-72 overflow-y-auto">
+            <button
+              onClick={() => {
+                onPick('');
+                setOpen(false);
+                setQ('');
+              }}
+              className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs hover:bg-neutral-800 ${
+                active ? 'text-neutral-400' : 'text-emerald-400'
+              }`}
+            >
+              Todas
+            </button>
+            {options.map((f) => (
+              <button
+                key={f.slug}
+                onClick={() => {
+                  onPick(f.slug === active ? '' : f.slug);
+                  setOpen(false);
+                  setQ('');
+                }}
+                className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-neutral-800 ${
+                  active === f.slug ? 'text-emerald-400' : 'text-neutral-300'
+                }`}
+              >
+                <span className="truncate">{f.name}</span>
+                <span className="shrink-0 text-neutral-500">{f.count}</span>
+              </button>
+            ))}
+            {options.length === 0 && (
+              <div className="px-2 py-4 text-center text-xs text-neutral-600">nada encontrado</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

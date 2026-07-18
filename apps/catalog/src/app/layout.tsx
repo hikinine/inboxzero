@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LayoutGrid, Plus } from 'lucide-react';
+import { SkillsHelp } from '@/components/SkillsHelp';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -18,13 +19,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <LayoutGrid className="h-5 w-5 text-emerald-400" />
               <span>Catálogo de Telas</span>
             </Link>
-            <Link
-              href="/screens/new"
-              className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-500"
-            >
-              <Plus className="h-4 w-4" />
-              Nova tela
-            </Link>
+            <div className="flex items-center gap-2">
+              <SkillsHelp />
+              <Link
+                href="/screens/new"
+                className="flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-emerald-500"
+              >
+                <Plus className="h-4 w-4" />
+                Nova tela
+              </Link>
+            </div>
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
