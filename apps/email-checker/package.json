@@ -1,0 +1,35 @@
+{
+  "name": "@tasky/email-checker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3072",
+    "build": "next build",
+    "start": "next start -p 3072",
+    "db-generate": "prisma generate",
+    "db-push": "prisma db push",
+    "db-reset": "prisma db push --force-reset --accept-data-loss",
+    "update-domains": "node scripts/update-domains.mjs",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "5.15.0",
+    "@usex/disposable-email-domains": "1.2.0",
+    "lucide-react": "catalog:",
+    "next": "^15.5.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "autoprefixer": "catalog:",
+    "postcss": "catalog:",
+    "prisma": "5.15.0",
+    "tailwindcss": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

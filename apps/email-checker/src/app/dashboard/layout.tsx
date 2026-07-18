@@ -1,0 +1,29 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { ShieldCheck } from 'lucide-react';
+import { DashboardNav } from '@/components/DashboardNav';
+import { getSessionUser } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const user = await getSessionUser();
+  if (!user) redirect('/login');
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-6xl gap-6 px-4 py-6">
+      <aside className="hidden w-56 shrink-0 flex-col sm:flex">
+        <Link href="/" className="mb-6 flex items-center gap-2 px-2 font-bold">
+          <ShieldCheck className="text-brand" size={20} /> Email Checker
+        </Link>
+        <DashboardNav />
+        <div className="mt-auto rounded-lg border p-3 text-sm" style={{ borderColor: 'var(--border)' }}>
+          <div className="text-xs text-neutral-400">Créditos</div>
+          <div className="text-2xl font-bold text-brand">{user.credits.toLocaleString('pt-BR')}</div>
+          <div className="mt-1 truncate text-xs text-neutral-400">{user.email}</div>
+        </div>
+      </aside>
+      <main className="min-w-0 flex-1">{children}</main>
+    </div>
+  );
+}

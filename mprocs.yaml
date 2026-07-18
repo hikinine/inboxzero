@@ -1,0 +1,37 @@
+# mprocs — roda o dev do tasky com um pane por processo.
+# Uso: `mprocs` na raiz do repo (ou `pnpm dev:tui`).
+# Cada proc carrega o .env da raiz via dotenv, igual ao `pnpm dev` (turbo).
+procs:
+  api:
+    shell: "dotenv -e .env -- pnpm --filter @tasky/api dev"
+  agent:
+    shell: "dotenv -e .env -- pnpm --filter @tasky/agent dev"
+  web:
+    shell: "dotenv -e .env -- pnpm --filter @tasky/web dev"
+
+  # Postgres via docker (sem -d pra streamar log no pane).
+  # Não sobe sozinho: aperte `s` no pane pra iniciar se precisar.
+  db:
+    shell: "docker compose -f infra/docker-compose.yml up"
+    autostart: false
+
+  # Tauri desktop (tauri:dev). Sobe o próprio vite na 1420 — não conflita com o
+  # pane `web` (vite na 3060). Compila o Rust na primeira vez, então demora um pouco.
+  desktop:
+    shell: "pnpm --filter @tasky/desktop tauri:dev"
+
+  # Catálogo de telas (Next.js) — UI + MCP em http://localhost:3070. Usa o próprio .env
+  # (apps/catalog/.env → CATALOG_DATABASE_URL na 5434), por isso sem dotenv da raiz aqui.
+  catalog:
+    shell: "pnpm --filter @tasky/catalog dev"
+
+  # Email Checker (Next.js) — SaaS de validação de e-mail em http://localhost:3072.
+  # Usa o próprio .env (apps/email-checker/.env → EMAIL_CHECKER_DATABASE_URL na 5435).
+  email-checker:
+    shell: "pnpm --filter @tasky/email-checker dev"
+
+  # ngrok — expõe a API (porta 3061, PORT no .env) no domínio reservado pros webhooks.
+  # Bate com PUBLIC_URL=https://dingy-bullion-slimy.ngrok-free.dev.
+  # Domínio free só aceita 1 túnel por vez: se já tiver ngrok rodando, o pane dá erro.
+  ngrok:
+    shell: "ngrok http 3061 --url https://dingy-bullion-slimy.ngrok-free.dev"

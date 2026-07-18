@@ -1,0 +1,144 @@
+// Email Checker (SaaS) — validação de e-mail por API key, com créditos e trilha de auditoria.
+// Migrations do monorepo são problemáticas (shadow DB); use `prisma db push`.
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" p/ dev local; "debian-openssl-3.0.x" p/ a imagem de produção (node:22-bookworm-slim).
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("EMAIL_CHECKER_DATABASE_URL")
+}
+
+// Origem de uma checagem: API pública (key) ou dashboard (sessão).
+enum CheckSource {
+  API
+  DASHBOARD
+}
+
+// Conta do usuário. `credits` é o saldo corrente (fonte de verdade rápida);
+// o histórico auditável de crédito fica em CreditLedger.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  credits      Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  apiKeys   ApiKey[]
+  checks    EmailCheck[]
+  batches   CheckBatch[]
+  ledger    CreditLedger[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+// Chave de API. Nunca guardamos a chave em claro — só o hash SHA-256 (lookup) + prefixo/últimos 4 (exibição).
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  prefix     String // ex.: ek_a1b2c3d4 (exibível)
+  last4      String
+  keyHash    String    @unique // sha256(chave completa)
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  checks  EmailCheck[]
+  batches CheckBatch[]
+
+  @@index([userId])
+  @@map("api_keys")
+}
+
+// Um lote de checagens (uma requisição em batch). Agrupa os EmailCheck e resume os números.
+model CheckBatch {
+  id               String      @id @default(cuid())
+  userId           String
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId         String?
+  apiKey           ApiKey?     @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  source           CheckSource
+  total            Int
+  validCount       Int
+  invalidCount     Int
+  disposableCount  Int
+  creditsCharged   Int
+  durationMs       Int?
+  createdAt        DateTime    @default(now())
+
+  checks EmailCheck[]
+
+  @@index([userId, createdAt])
+  @@map("check_batches")
+}
+
+// Retenção auditável de TODO e-mail checado e o resultado da validação.
+model EmailCheck {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKeyId     String?
+  apiKey       ApiKey?     @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  batchId      String?
+  batch        CheckBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  source       CheckSource
+
+  email        String
+  domain       String?
+  isValid      Boolean
+  isDisposable Boolean
+  confidence   Int         @default(0)
+  reason       String?
+  mxChecked    Boolean     @default(false)
+  hasMx        Boolean?
+  durationMs   Int?
+  createdAt    DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([email])
+  @@index([domain])
+  @@index([batchId])
+  @@index([isDisposable])
+  @@map("email_checks")
+}
+
+// Livro-razão de créditos: cada débito/crédito com saldo resultante. Torna os créditos 100% auditáveis.
+model CreditLedger {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delta        Int // negativo = débito, positivo = crédito
+  balanceAfter Int
+  reason       String // signup_bonus | check | batch | admin_grant | admin_adjust
+  refType      String? // ex.: email_check | check_batch
+  refId        String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("credit_ledger")
+}
+
+// Trilha de auditoria de eventos da conta (login, criação/revogação de key, checagens, ajustes de crédito).
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  apiKeyId  String?
+  action    String // ex.: auth.register | auth.login | key.create | key.revoke | check.single | check.batch
+  detail    Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
