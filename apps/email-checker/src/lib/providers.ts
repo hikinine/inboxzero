@@ -4,12 +4,16 @@ import type { MailboxResult } from './smtp';
 // A joia é a Microsoft 365: o endpoint público GetCredentialType (usado pela própria tela de login
 // do Office) revela se a caixa existe no tenant — mesmo em domínio catch-all, sem SMTP.
 
-export type Provider = 'microsoft' | 'google' | 'other';
+export type Provider = 'microsoft' | 'microsoft-consumer' | 'google' | 'other';
 
 // Identifica o provedor pelo host do MX e devolve um rótulo amigável (estilo ZeroBounce).
 export function detectProvider(mxHost: string | null | undefined): { provider: Provider; label: string } {
   const h = (mxHost || '').toLowerCase();
   if (!h) return { provider: 'other', label: 'desconhecido' };
+  // Outlook CONSUMER (hotmail/outlook/live) → MX *.olc.protection.outlook.com ("olc" = Outlook Consumer).
+  // A GetCredentialType é uma checagem de tenant Azure AD (corporativo) — NÃO reflete caixa consumer
+  // (devolve IfExistsResult=1 pra todos). Então NÃO roteamos consumer pra ela.
+  if (h.includes('olc.protection.outlook.com')) return { provider: 'microsoft-consumer', label: 'outlook' };
   if (h.includes('protection.outlook.com') || h.endsWith('.outlook.com') || h.includes('office365'))
     return { provider: 'microsoft', label: 'microsoft' };
   if (h.includes('gmail-smtp-in')) return { provider: 'google', label: 'gmail' };
@@ -54,11 +58,15 @@ export async function checkMicrosoft365(email: string, timeoutMs = 6000): Promis
     if (res.ok) {
       const j: any = await res.json();
       const throttled = typeof j?.ThrottleStatus === 'number' && j.ThrottleStatus !== 0;
+      // DomainType: 2 = Consumer (MSA/pessoal) · 3 = Managed (Azure AD corporativo) · 4 = Federado.
+      // SÓ o tenant Managed (3) dá existência de caixa confiável. Consumer devolve IfExistsResult=1
+      // pra TODOS — confiar nisso geraria falso "não existe" (perigoso: descarta caixa real).
+      const domainType = j?.EstsProperties?.DomainType;
       const ife = j?.IfExistsResult;
-      if (throttled) result = 'unknown';
+      if (throttled || domainType !== 3) result = 'unknown';
       else if (ife === 0) result = 'exists';
       else if (ife === 1) result = 'not_found';
-      else result = 'unknown'; // 5 = federado/outro IdP, 6 = throttle, etc.
+      else result = 'unknown';
     }
   } catch {
     result = 'unknown';

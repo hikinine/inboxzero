@@ -167,13 +167,19 @@ export async function verifyEmails(
     const host = (mxMap.get(o.domain as string) ?? {}).host;
     const { provider } = detectProvider(host);
 
-    // Microsoft 365: GetCredentialType é definitivo (até em catch-all) e mais rápido que SMTP.
+    // Microsoft 365 CORPORATIVO: GetCredentialType é definitivo (até em catch-all) e mais rápido que SMTP.
     if (provider === 'microsoft') {
       const r = await checkMicrosoft365(o.email);
       if (r !== 'unknown') return { result: r, reason: undefined as string | undefined, method: 'microsoft' as const };
       // inconclusivo (throttle/federado) → tenta SMTP como fallback
       if (host) return { ...(await verifyMailbox(o.email, host)), method: 'smtp' as const };
       return { result: 'unknown' as MailboxResult, reason: undefined as string | undefined, method: null };
+    }
+
+    // Outlook CONSUMER (hotmail/outlook/live): GetCredentialType mente (IfExistsResult=1 pra todos) e
+    // o SMTP não responde de IP não-reputado. NUNCA afirmar not_found — devolve indeterminado.
+    if (provider === 'microsoft-consumer') {
+      return { result: 'unknown' as MailboxResult, reason: 'consumer_indeterminado', method: null };
     }
 
     // Demais provedores: SMTP RCPT (com detecção de catch-all).
