@@ -10,7 +10,7 @@ export default async function HomePage({
 }) {
   const { q, collection, tag } = await searchParams;
 
-  const [collections, tags] = await Promise.all([
+  const [collections, tags, totalScreens] = await Promise.all([
     prisma.collection.findMany({
       orderBy: { name: 'asc' },
       include: { _count: { select: { screens: true } } },
@@ -19,6 +19,7 @@ export default async function HomePage({
       orderBy: { name: 'asc' },
       include: { _count: { select: { screens: true } } },
     }),
+    prisma.screen.count(),
   ]);
 
   const facets: Facets = {
@@ -29,6 +30,7 @@ export default async function HomePage({
   return (
     <CatalogGrid
       facets={facets}
+      totalScreens={totalScreens}
       initialFilters={{ q: q ?? '', collection: collection ?? '', tag: tag ?? '' }}
     />
   );

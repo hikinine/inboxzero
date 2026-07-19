@@ -37,7 +37,15 @@ type Picked = { id: string; slug: string; name: string };
 
 const LIMIT = 40;
 
-export function CatalogGrid({ facets, initialFilters }: { facets: Facets; initialFilters: Filters }) {
+export function CatalogGrid({
+  facets,
+  totalScreens,
+  initialFilters,
+}: {
+  facets: Facets;
+  totalScreens: number;
+  initialFilters: Filters;
+}) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -216,126 +224,125 @@ ${lines}
   }
 
   const anyFilter = !!(filters.q || filters.collection || filters.tag);
-  const activeCollection = facets.collections.find((c) => c.slug === filters.collection);
   const activeTag = facets.tags.find((t) => t.slug === filters.tag);
 
   return (
-    <div className={`space-y-5 ${selCount > 0 ? 'pb-28' : ''}`}>
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-        <input
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Buscar telas por nome ou descrição…"
-          className="w-full rounded-md border border-neutral-800 bg-neutral-900 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-neutral-500 focus:border-neutral-600"
-        />
-      </div>
+    <div className={`flex items-start gap-6 ${selCount > 0 ? 'pb-28' : ''}`}>
+      <CollectionsAside
+        collections={facets.collections}
+        totalScreens={totalScreens}
+        active={filters.collection}
+        onPick={(slug) => setFilters((f) => ({ ...f, collection: slug }))}
+      />
 
-      {/* Barra de filtros compacta: dropdowns com busca em vez de parede de pills.
-          Escala para centenas de tags sem empurrar o grid para fora da tela. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterMenu
-          label="Coleção"
-          facets={facets.collections}
-          active={filters.collection}
-          onPick={(slug) => setFilters((f) => ({ ...f, collection: slug }))}
-        />
-        <FilterMenu
-          label="Tag"
-          facets={facets.tags}
-          active={filters.tag}
-          onPick={(slug) => setFilters((f) => ({ ...f, tag: slug }))}
-          searchable
-        />
-
-        {activeCollection && (
-          <FilterChip label={activeCollection.name} onClear={() => setFilters((f) => ({ ...f, collection: '' }))} />
-        )}
-        {activeTag && <FilterChip label={activeTag.name} onClear={() => setFilters((f) => ({ ...f, tag: '' }))} />}
-
-        <div className="ml-auto flex items-center gap-3 text-sm text-neutral-500">
-          <span>
-            {total != null ? `${total} tela${total === 1 ? '' : 's'}` : `${items.length} carregada${items.length === 1 ? '' : 's'}`}
-          </span>
-          {anyFilter && (
-            <button
-              onClick={() => {
-                setSearchInput('');
-                setFilters({ q: '', collection: '', tag: '' });
-              }}
-              className="inline-flex items-center gap-1 text-neutral-400 hover:text-neutral-200"
-            >
-              <X className="h-3.5 w-3.5" />
-              Limpar
-            </button>
-          )}
+      <div className="min-w-0 flex-1 space-y-5">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Buscar telas por nome ou descrição…"
+            className="w-full rounded-md border border-neutral-800 bg-neutral-900 py-2 pl-9 pr-3 text-sm outline-none placeholder:text-neutral-500 focus:border-neutral-600"
+          />
         </div>
-      </div>
 
-      {items.length === 0 && !loading ? (
-        <div className="rounded-lg border border-dashed border-neutral-800 p-16 text-center text-neutral-500">
-          Nenhuma tela encontrada.
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {items.map((s) => {
-            const isSel = !!selected[s.id];
-            return (
-              <div
-                key={s.id}
-                className={`group relative flex flex-col overflow-hidden rounded-lg border bg-neutral-900 transition ${
-                  isSel ? 'border-emerald-500 ring-2 ring-emerald-500/60' : 'border-neutral-800 hover:border-neutral-600'
-                }`}
+        {/* Barra de filtros compacta: dropdown com busca em vez de parede de pills.
+            Escala para centenas de tags sem empurrar o grid para fora da tela. */}
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterMenu
+            label="Tag"
+            facets={facets.tags}
+            active={filters.tag}
+            onPick={(slug) => setFilters((f) => ({ ...f, tag: slug }))}
+            searchable
+          />
+
+          {activeTag && <FilterChip label={activeTag.name} onClear={() => setFilters((f) => ({ ...f, tag: '' }))} />}
+
+          <div className="ml-auto flex items-center gap-3 text-sm text-neutral-500">
+            <span>
+              {total != null ? `${total} tela${total === 1 ? '' : 's'}` : `${items.length} carregada${items.length === 1 ? '' : 's'}`}
+            </span>
+            {anyFilter && (
+              <button
+                onClick={() => {
+                  setSearchInput('');
+                  setFilters({ q: '', collection: '', tag: '' });
+                }}
+                className="inline-flex items-center gap-1 text-neutral-400 hover:text-neutral-200"
               >
-                {/* checkbox de seleção */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleSel(s);
-                  }}
-                  title={isSel ? 'Desmarcar' : 'Selecionar'}
-                  className={`absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border transition ${
-                    isSel
-                      ? 'border-emerald-500 bg-emerald-600 text-white'
-                      : 'border-neutral-500 bg-neutral-900/80 text-transparent opacity-0 group-hover:opacity-100 hover:border-neutral-300'
-                  }`}
-                >
-                  <Check className="h-4 w-4" />
-                </button>
-
-                <Link href={`/screens/${s.slug}`} className="checkerboard flex aspect-[4/3] items-center justify-center overflow-hidden p-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/api/screens/${s.id}/raw`} alt={s.name} loading="lazy" className="max-h-full max-w-full object-contain" />
-                </Link>
-                <div className="flex items-center gap-2 border-t border-neutral-800 p-3">
-                  <Link href={`/screens/${s.slug}`} className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{s.name}</div>
-                    <div className="mt-0.5 truncate text-xs text-neutral-500">{s.collection?.name ?? '—'}</div>
-                  </Link>
-                  <CopyButton
-                    value={s.id}
-                    className="shrink-0 rounded-md p-1.5 text-neutral-500 opacity-0 transition hover:bg-neutral-800 hover:text-neutral-200 group-hover:opacity-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onDelete(s)}
-                    title="Deletar"
-                    className="shrink-0 rounded-md p-1.5 text-neutral-500 opacity-0 transition hover:bg-red-950 hover:text-red-400 group-hover:opacity-100"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                <X className="h-3.5 w-3.5" />
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
-      )}
 
-      <div ref={sentinelRef} className="flex h-12 items-center justify-center">
-        {loading && <Loader2 className="h-5 w-5 animate-spin text-neutral-600" />}
-        {!hasMore && items.length > 0 && <span className="text-xs text-neutral-600">Fim do catálogo</span>}
+        {items.length === 0 && !loading ? (
+          <div className="rounded-lg border border-dashed border-neutral-800 p-16 text-center text-neutral-500">
+            Nenhuma tela encontrada.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {items.map((s) => {
+                const isSel = !!selected[s.id];
+                return (
+                  <div
+                    key={s.id}
+                    className={`group relative flex flex-col overflow-hidden rounded-lg border bg-neutral-900 transition ${
+                      isSel ? 'border-emerald-500 ring-2 ring-emerald-500/60' : 'border-neutral-800 hover:border-neutral-600'
+                    }`}
+                  >
+                    {/* checkbox de seleção */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleSel(s);
+                      }}
+                      title={isSel ? 'Desmarcar' : 'Selecionar'}
+                      className={`absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md border transition ${
+                        isSel
+                          ? 'border-emerald-500 bg-emerald-600 text-white'
+                          : 'border-neutral-500 bg-neutral-900/80 text-transparent opacity-0 group-hover:opacity-100 hover:border-neutral-300'
+                      }`}
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+
+                    <Link href={`/screens/${s.slug}`} className="checkerboard flex aspect-[4/3] items-center justify-center overflow-hidden p-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/api/screens/${s.id}/raw`} alt={s.name} loading="lazy" className="max-h-full max-w-full object-contain" />
+                    </Link>
+                    <div className="flex items-center gap-2 border-t border-neutral-800 p-3">
+                      <Link href={`/screens/${s.slug}`} className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{s.name}</div>
+                        <div className="mt-0.5 truncate text-xs text-neutral-500">{s.collection?.name ?? '—'}</div>
+                      </Link>
+                      <CopyButton
+                        value={s.id}
+                        className="shrink-0 rounded-md p-1.5 text-neutral-500 opacity-0 transition hover:bg-neutral-800 hover:text-neutral-200 group-hover:opacity-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => onDelete(s)}
+                        title="Deletar"
+                        className="shrink-0 rounded-md p-1.5 text-neutral-500 opacity-0 transition hover:bg-red-950 hover:text-red-400 group-hover:opacity-100"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+        )}
+
+        <div ref={sentinelRef} className="flex h-12 items-center justify-center">
+          {loading && <Loader2 className="h-5 w-5 animate-spin text-neutral-600" />}
+          {!hasMore && items.length > 0 && <span className="text-xs text-neutral-600">Fim do catálogo</span>}
+        </div>
       </div>
 
       {/* barra flutuante de ação em massa */}
@@ -395,6 +402,51 @@ function FilterChip({ label, onClear }: { label: string; onClear: () => void }) 
         <X className="h-3 w-3" />
       </button>
     </span>
+  );
+}
+
+// Aside de navegação por coleção — substitui o antigo dropdown "Coleção" no filtro.
+// "Todas" (coleção vazia) é o default; contagem vem do total geral de telas.
+function CollectionsAside({
+  collections,
+  totalScreens,
+  active,
+  onPick,
+}: {
+  collections: Facet[];
+  totalScreens: number;
+  active: string;
+  onPick: (slug: string) => void;
+}) {
+  const options = useMemo(() => collections.filter((c) => c.count > 0), [collections]);
+
+  return (
+    <aside className="sticky top-20 hidden w-56 shrink-0 space-y-0.5 md:block">
+      <h3 className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-neutral-500">Coleções</h3>
+      <button
+        onClick={() => onPick('')}
+        className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm transition ${
+          !active ? 'bg-emerald-950/40 text-emerald-300' : 'text-neutral-300 hover:bg-neutral-900'
+        }`}
+      >
+        <span>Todas</span>
+        <span className={`text-xs ${!active ? 'text-emerald-400' : 'text-neutral-500'}`}>{totalScreens}</span>
+      </button>
+      {options.map((c) => (
+        <button
+          key={c.slug}
+          onClick={() => onPick(c.slug === active ? '' : c.slug)}
+          className={`flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition ${
+            active === c.slug ? 'bg-emerald-950/40 text-emerald-300' : 'text-neutral-300 hover:bg-neutral-900'
+          }`}
+        >
+          <span className="truncate">{c.name}</span>
+          <span className={`shrink-0 text-xs ${active === c.slug ? 'text-emerald-400' : 'text-neutral-500'}`}>
+            {c.count}
+          </span>
+        </button>
+      ))}
+    </aside>
   );
 }
 
