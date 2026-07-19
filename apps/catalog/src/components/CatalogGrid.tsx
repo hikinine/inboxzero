@@ -3,7 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Check, ChevronDown, Copy, Download, Loader2, Search, Trash2, X } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Download,
+  Folder,
+  Loader2,
+  Minus,
+  Plus,
+  Search,
+  Tag as TagIcon,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { CopyButton } from './CopyButton';
 
 export interface ScreenMeta {
@@ -34,6 +47,7 @@ interface Filters {
   tag: string;
 }
 type Picked = { id: string; slug: string; name: string };
+type BulkResult = { screens?: number; tags?: number; linked?: number; unlinked?: number; error?: string };
 
 const LIMIT = 40;
 
@@ -72,6 +86,47 @@ export function CatalogGrid({
       return n;
     });
   const clearSel = () => setSelected({});
+
+  // ── ações em massa (tags / coleção) ──
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
+
+  // Recarrega a 1ª página com os filtros atuais. Necessário após uma ação em massa: o card mostra a
+  // coleção, e tag/coleção podem mudar o que o filtro corrente retorna (a tela pode sair da lista).
+  async function refreshItems() {
+    try {
+      const res = await fetch(`/api/screens?${queryString()}&withTotal=1`);
+      const data = await res.json();
+      setItems(data.items);
+      setCursor(data.nextCursor);
+      setHasMore(!!data.nextCursor);
+      setTotal(typeof data.total === 'number' ? data.total : null);
+    } catch {
+      /* mantém a lista atual — a ação já foi aplicada no servidor */
+    }
+  }
+
+  async function applyBulk(payload: Record<string, unknown>, describe: (r: BulkResult) => string) {
+    if (!selCount || bulkBusy) return;
+    setBulkBusy(true);
+    try {
+      const res = await fetch('/api/screens/bulk', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...payload, ids: selList.map((s) => s.id) }),
+      });
+      const data: BulkResult = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Falha na ação em massa');
+      setBulkMsg(describe(data));
+      setTimeout(() => setBulkMsg(null), 2400);
+      await refreshItems();
+      router.refresh(); // contagens do aside/facetas vêm do server component
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Falha na ação em massa');
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   async function downloadZip() {
     if (!selCount) return;
@@ -371,6 +426,35 @@ ${lines}
             <button onClick={clearSel} className="shrink-0 rounded-md px-2 py-1.5 text-xs text-neutral-400 hover:text-neutral-200">
               Limpar
             </button>
+
+            <BulkTagsMenu
+              tags={facets.tags}
+              busy={bulkBusy}
+              onApply={(mode, tag) =>
+                applyBulk(
+                  { action: mode === 'add' ? 'addTags' : 'removeTags', tags: [tag] },
+                  (r) =>
+                    mode === 'add'
+                      ? `+ “${tag}” em ${r.screens ?? 0} tela(s)`
+                      : `− “${tag}” de ${r.screens ?? 0} tela(s)`,
+                )
+              }
+            />
+            <BulkCollectionMenu
+              collections={facets.collections}
+              busy={bulkBusy}
+              onApply={(name) =>
+                applyBulk({ action: 'setCollection', collection: name }, (r) =>
+                  name ? `${r.screens ?? 0} tela(s) → “${name}”` : `${r.screens ?? 0} tela(s) sem coleção`,
+                )
+              }
+            />
+
+            {bulkBusy && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-neutral-400" />}
+            {bulkMsg && !bulkBusy && (
+              <span className="shrink-0 whitespace-nowrap text-xs text-emerald-400">{bulkMsg}</span>
+            )}
+
             <button
               onClick={copyPrompt}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-neutral-700 px-3 py-1.5 text-sm transition hover:border-neutral-500"
@@ -452,6 +536,232 @@ function CollectionsAside({
 
 const norm = (s: string) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+// Fecha o dropdown ao clicar fora ou apertar Esc — mesmo comportamento do FilterMenu.
+function useCloseOnOutside(open: boolean, ref: React.RefObject<HTMLDivElement | null>, close: () => void) {
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+}
+
+// Ação em massa de TAGS. Abre para CIMA (a barra vive no rodapé) e permanece aberto após aplicar,
+// porque o caso comum é aplicar VÁRIAS tags na mesma seleção. Adicionar é ADITIVO (não remove as
+// que já existem); remover desvincula só a tag clicada.
+function BulkTagsMenu({
+  tags,
+  busy,
+  onApply,
+}: {
+  tags: Facet[];
+  busy: boolean;
+  onApply: (mode: 'add' | 'remove', tagName: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'add' | 'remove'>('add');
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  useCloseOnOutside(open, ref, () => setOpen(false));
+
+  const term = q.trim();
+  const options = useMemo(
+    () =>
+      tags
+        // ao REMOVER, tag sem uso é ruído; ao ADICIONAR, qualquer tag existente serve.
+        .filter((t) => (mode === 'remove' ? t.count > 0 : true))
+        .filter((t) => !term || norm(t.name).includes(norm(term)))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 200),
+    [tags, term, mode],
+  );
+  const canCreate = mode === 'add' && !!term && !tags.some((t) => norm(t.name) === norm(term));
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        disabled={busy}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-md border border-neutral-700 px-3 py-1.5 text-sm transition hover:border-neutral-500 disabled:opacity-50"
+      >
+        <TagIcon className="h-4 w-4" />
+        Tags
+        <ChevronDown className={`h-3.5 w-3.5 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 z-40 mb-2 w-72 rounded-md border border-neutral-800 bg-neutral-900 p-1 shadow-2xl">
+          <div className="mb-1 flex gap-1 rounded bg-neutral-950 p-0.5">
+            {(['add', 'remove'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMode(m)}
+                className={`flex flex-1 items-center justify-center gap-1 rounded px-2 py-1 text-xs transition ${
+                  mode === m ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+              >
+                {m === 'add' ? <Plus className="h-3 w-3" /> : <Minus className="h-3 w-3" />}
+                {m === 'add' ? 'Adicionar' : 'Remover'}
+              </button>
+            ))}
+          </div>
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={mode === 'add' ? 'Buscar ou criar tag…' : 'Buscar tag…'}
+            className="mb-1 w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+          />
+          <p className="px-2 pb-1 text-[11px] leading-snug text-neutral-600">
+            {mode === 'add'
+              ? 'Mantém as tags existentes. Clique em várias para aplicar mais de uma.'
+              : 'Remove apenas a tag clicada das telas selecionadas.'}
+          </p>
+          <div className="max-h-64 overflow-y-auto">
+            {canCreate && (
+              <button
+                disabled={busy}
+                onClick={() => onApply('add', term)}
+                className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs text-emerald-400 hover:bg-neutral-800 disabled:opacity-50"
+              >
+                <Plus className="h-3 w-3 shrink-0" />
+                <span className="truncate">Criar e adicionar “{term}”</span>
+              </button>
+            )}
+            {options.map((t) => (
+              <button
+                key={t.slug}
+                disabled={busy}
+                onClick={() => onApply(mode, t.name)}
+                className="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50"
+              >
+                <span className="truncate">{t.name}</span>
+                <span className="shrink-0 text-neutral-500">{t.count}</span>
+              </button>
+            ))}
+            {!options.length && !canCreate && (
+              <div className="px-2 py-4 text-center text-xs text-neutral-600">nada encontrado</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Ação em massa de COLEÇÃO. `Screen.collectionId` é 1:N (uma tela pertence a UMA coleção), então
+// aplicar MOVE as telas — substitui a coleção atual. O texto do menu deixa isso explícito.
+function BulkCollectionMenu({
+  collections,
+  busy,
+  onApply,
+}: {
+  collections: Facet[];
+  busy: boolean;
+  onApply: (collectionName: string | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  useCloseOnOutside(open, ref, () => setOpen(false));
+
+  const term = q.trim();
+  const options = useMemo(
+    () =>
+      collections
+        .filter((c) => !term || norm(c.name).includes(norm(term)))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 200),
+    [collections, term],
+  );
+  const canCreate = !!term && !collections.some((c) => norm(c.name) === norm(term));
+
+  return (
+    <div className="relative shrink-0" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        disabled={busy}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-md border border-neutral-700 px-3 py-1.5 text-sm transition hover:border-neutral-500 disabled:opacity-50"
+      >
+        <Folder className="h-4 w-4" />
+        Coleção
+        <ChevronDown className={`h-3.5 w-3.5 transition ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute bottom-full left-0 z-40 mb-2 w-72 rounded-md border border-neutral-800 bg-neutral-900 p-1 shadow-2xl">
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar ou criar coleção…"
+            className="mb-1 w-full rounded border border-neutral-800 bg-neutral-950 px-2 py-1.5 text-xs outline-none placeholder:text-neutral-600 focus:border-neutral-600"
+          />
+          <p className="px-2 pb-1 text-[11px] leading-snug text-neutral-600">
+            Cada tela pertence a uma coleção — isto <strong className="font-medium text-neutral-500">substitui</strong> a
+            atual.
+          </p>
+          <div className="max-h-64 overflow-y-auto">
+            {canCreate && (
+              <button
+                disabled={busy}
+                onClick={() => {
+                  onApply(term);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs text-emerald-400 hover:bg-neutral-800 disabled:opacity-50"
+              >
+                <Plus className="h-3 w-3 shrink-0" />
+                <span className="truncate">Criar e mover para “{term}”</span>
+              </button>
+            )}
+            {options.map((c) => (
+              <button
+                key={c.slug}
+                disabled={busy}
+                onClick={() => {
+                  onApply(c.name);
+                  setOpen(false);
+                }}
+                className="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50"
+              >
+                <span className="truncate">{c.name}</span>
+                <span className="shrink-0 text-neutral-500">{c.count}</span>
+              </button>
+            ))}
+            {!options.length && !canCreate && (
+              <div className="px-2 py-4 text-center text-xs text-neutral-600">nada encontrado</div>
+            )}
+          </div>
+          <div className="mt-1 border-t border-neutral-800 pt-1">
+            <button
+              disabled={busy}
+              onClick={() => {
+                onApply(null);
+                setOpen(false);
+              }}
+              className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 disabled:opacity-50"
+            >
+              <X className="h-3 w-3 shrink-0" />
+              Remover da coleção
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Dropdown de faceta. Esconde facetas vazias, ordena por uso e permite buscar —
 // é o que faz a UI aguentar centenas de tags.
