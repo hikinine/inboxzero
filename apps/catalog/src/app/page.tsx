@@ -12,7 +12,7 @@ export default async function HomePage({
 
   const [collections, tags, totalScreens] = await Promise.all([
     prisma.collection.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { createdAt: 'desc' },
       include: { _count: { select: { screens: true } } },
     }),
     prisma.tag.findMany({
