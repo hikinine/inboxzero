@@ -249,11 +249,13 @@ ${lines}
   }, []);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const sentinelVisibleRef = useRef(false);
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const obs = new IntersectionObserver(
       (entries) => {
+        sentinelVisibleRef.current = !!entries[0]?.isIntersecting;
         if (entries[0]?.isIntersecting) loadMore();
       },
       { rootMargin: '800px' },
@@ -261,6 +263,14 @@ ${lines}
     obs.observe(el);
     return () => obs.disconnect();
   }, [loadMore]);
+
+  // IntersectionObserver só dispara em TRANSIÇÃO de visibilidade. Se o sentinela ficou
+  // dentro da margem durante o fetch (o disparo foi engolido pelo guard de loading),
+  // nenhum novo evento chega e o scroll infinito morre. Este efeito re-verifica ao fim
+  // de cada página: sentinela ainda visível + tem mais → carrega a próxima.
+  useEffect(() => {
+    if (!loading && hasMore && sentinelVisibleRef.current) loadMore();
+  }, [loading, hasMore, loadMore]);
 
   async function onDelete(screen: ScreenMeta) {
     if (!confirm(`Deletar "${screen.name}"?\nEssa ação é irreversível.`)) return;
