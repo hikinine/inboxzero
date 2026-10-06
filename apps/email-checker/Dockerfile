@@ -20,7 +20,9 @@ COPY . .
 # O pnpm já ignora por padrão o preinstall "only-allow bun" do @usex/disposable-email-domains
 # (não está no pnpm.onlyBuiltDependencies), então o install roda limpo e o postinstall do app
 # (prisma generate) executa normalmente — igual ao catalog.
-RUN pnpm install --frozen-lockfile --filter @tasky/email-checker...
+# --no-frozen-lockfile: o pnpm-lock.yaml é do monorepo inteiro e às vezes fica fora de
+# sincronia com outros apps (ex.: apps/agent); as versões do email-checker seguem as do lock.
+RUN pnpm install --no-frozen-lockfile --filter @tasky/email-checker...
 RUN pnpm --filter @tasky/email-checker build
 
 # ---- runner: output standalone + prisma CLI p/ db push no start ----

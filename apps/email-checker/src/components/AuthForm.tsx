@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { CxMark } from '@/components/CxMark';
+import { BrandMark } from '@/components/BrandMark';
 
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const router = useRouter();
@@ -42,7 +42,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <Link href="/" className="mb-6 flex items-center justify-center gap-2 font-bold">
-        <CxMark size={20} /> MX Check
+        <BrandMark size={20} /> MX Check
       </Link>
       <div className="card p-6">
         <h1 className="text-xl font-bold">{isRegister ? 'Criar conta' : 'Entrar'}</h1>

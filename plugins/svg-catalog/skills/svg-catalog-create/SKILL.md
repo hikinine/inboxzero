@@ -2,7 +2,7 @@
 name: svg-catalog-create
 description: >-
   Cria ilustrações SVG no padrão Clickmax/CX e publica no catálogo
-  (hiki9.inboxzero.space) via MCP. Use SEMPRE que o usuário pedir para criar,
+  (catalog.codehall.io) via MCP. Use SEMPRE que o usuário pedir para criar,
   gerar, desenhar ou fazer SVG/ilustração/ícone/diagrama/hero/variantes — inclusive
   "cria uns svgs pra X", "gera variantes disso", "faz uma ilustração de CRM/funil/
   atendimento", "publica no catálogo", "sobe pra collection". Traz as regras de
@@ -13,7 +13,7 @@ description: >-
 # Criar SVG → Catálogo Clickmax
 
 Autorar ilustrações **vetoriais nativas** (não raster embrulhado) e publicá-las no
-catálogo de produção: **https://hiki9.inboxzero.space** (preview em **fundo escuro**).
+catálogo de produção: **https://catalog.codehall.io** (preview em **fundo escuro**).
 
 Tools do MCP: `mcp__catalog__add_screen`, `update_screen`, `search_screens`,
 `get_screen`, `list_collections`, `list_tags`.
@@ -96,7 +96,7 @@ add_screen { name, svg, description?, collection?, tags?[], status? }
 
 **Fallback sem MCP** (HTTP direto, token prod no `.mcp.json` do repo tasky — gitignored):
 ```js
-await fetch('https://hiki9.inboxzero.space/api/mcp', {
+await fetch('https://catalog.codehall.io/api/mcp', {
   method: 'POST',
   headers: { authorization: 'Bearer <CATALOG_MCP_TOKEN>', 'content-type': 'application/json' },
   body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call',

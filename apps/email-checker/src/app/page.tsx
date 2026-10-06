@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { CxMark } from '@/components/CxMark';
+import { BrandMark } from '@/components/BrandMark';
 import { AutomationFlow } from '@/components/landing/AutomationFlow';
 import { HeroDemo } from '@/components/landing/HeroDemo';
 import { ApiShowcase, AuditLedger, Pipeline, Reveal, Stats, VerdictTicker } from '@/components/landing/Sections';
@@ -29,7 +29,7 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-graphite/70 bg-void/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-page items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 text-[15px] text-white" style={{ fontWeight: 510 }}>
-            <CxMark size={19} />
+            <BrandMark size={19} />
             MX Check
             <span className="mono ml-1 hidden text-[10px] text-ash sm:inline">por Clickmax</span>
           </Link>
@@ -60,7 +60,7 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-page px-6 pb-20 pt-24 text-center sm:pt-28">
           <Reveal>
             <span className="badge mx-auto inline-flex items-center gap-1.5 bg-white/5 !px-2.5 text-fog">
-              <CxMark size={13} /> MX Check — o “CX Check” da Clickmax
+              <BrandMark size={13} /> MX Check — o “CX Check” da Clickmax
             </span>
           </Reveal>
           <Reveal delay={80}>
@@ -266,7 +266,7 @@ export default async function LandingPage() {
       <footer className="hairline-t">
         <div className="mx-auto flex max-w-page flex-col items-center justify-between gap-3 px-6 py-8 text-[12.5px] text-ash sm:flex-row">
           <span className="flex items-center gap-2">
-            <CxMark size={15} />
+            <BrandMark size={15} />
             MX Check
             <span className="text-ash">· por Clickmax</span>
           </span>

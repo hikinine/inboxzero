@@ -1,7 +1,7 @@
 # Plugin `svg-catalog`
 
 Duas skills para trabalhar com o catálogo de ilustrações SVG da Clickmax
-(**https://hiki9.inboxzero.space**):
+(**https://catalog.codehall.io**):
 
 | Skill | Para quê |
 |---|---|
@@ -32,7 +32,7 @@ do seu projeto (ou no global):
   "mcpServers": {
     "catalog": {
       "type": "http",
-      "url": "https://hiki9.inboxzero.space/api/mcp",
+      "url": "https://catalog.codehall.io/api/mcp",
       "headers": { "Authorization": "Bearer ${CATALOG_MCP_TOKEN}" }
     }
   }

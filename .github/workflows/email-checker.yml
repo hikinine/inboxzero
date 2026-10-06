@@ -1,0 +1,59 @@
+name: Email Checker — Build & Deploy
+
+# Push na main que mexa no email-checker → builda apps/email-checker/Dockerfile, publica no
+# ghcr.io e dispara o deploy no Dokploy (cloud.codehall.io) pelo webhook do app.
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/email-checker/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/email-checker.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: email-checker-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/email-checker/Dockerfile
+          # O host do Dokploy é amd64.
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/hikinine/email-checker:production
+            ghcr.io/hikinine/email-checker:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=email-checker
+          cache-to: type=gha,mode=max,scope=email-checker
+
+      - name: Deploy no Dokploy
+        env:
+          WEBHOOK: ${{ secrets.DOKPLOY_EMAIL_CHECKER_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::DOKPLOY_EMAIL_CHECKER_WEBHOOK não configurado — a imagem subiu, mas o deploy não foi disparado."
+            exit 0
+          fi
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 10 -X POST "$WEBHOOK"

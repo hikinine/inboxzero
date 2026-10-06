@@ -5,8 +5,8 @@ import net from 'node:net';
 
 export type MailboxResult = 'exists' | 'not_found' | 'catch_all' | 'unknown';
 
-const HELO_HOST = process.env.SMTP_HELO_HOST ?? 'email-checker.inboxzero.space';
-const MAIL_FROM = process.env.SMTP_MAIL_FROM ?? 'verify@email-checker.inboxzero.space';
+const HELO_HOST = process.env.SMTP_HELO_HOST ?? 'email-checker.codehall.io';
+const MAIL_FROM = process.env.SMTP_MAIL_FROM ?? 'verify@email-checker.codehall.io';
 
 function isAccept(code: number): boolean {
   return code === 250 || code === 251;

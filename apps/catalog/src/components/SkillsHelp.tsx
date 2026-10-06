@@ -11,7 +11,7 @@ const MCP = `{
   "mcpServers": {
     "catalog": {
       "type": "http",
-      "url": "https://hiki9.inboxzero.space/api/mcp",
+      "url": "https://catalog.codehall.io/api/mcp",
       "headers": { "Authorization": "Bearer \${CATALOG_MCP_TOKEN}" }
     }
   }

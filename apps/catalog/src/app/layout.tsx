@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
-import { LayoutGrid, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { SkillsHelp } from '@/components/SkillsHelp';
 import './globals.css';
 
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="sticky top-0 z-10 border-b border-neutral-800 bg-neutral-950/80 backdrop-blur">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <LayoutGrid className="h-5 w-5 text-emerald-400" />
+              <Image src="/brand/logo.png" alt="" width={28} height={28} unoptimized className="h-7 w-7 rounded-md" />
               <span>Catálogo de Telas</span>
             </Link>
             <div className="flex items-center gap-2">

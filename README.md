@@ -8,8 +8,8 @@ Monorepo pnpm + turbo. Node ≥ 22.
 | `apps/web` | Front do tasky (Vite) | 3060 |
 | `apps/agent` | Agente/pollers (Linear, Bitrix, GitHub, Gmail) | — |
 | `apps/desktop` | App Tauri | 1420 |
-| `apps/catalog` | **Catálogo de SVGs** — UI + API + servidor MCP · [hiki9.inboxzero.space](https://hiki9.inboxzero.space) | 3070 |
-| `apps/email-checker` | **MX Check** — validação de e-mail por API key · [email-checker.inboxzero.space](https://email-checker.inboxzero.space) | 3072 |
+| `apps/catalog` | **Catálogo de SVGs** — UI + API + servidor MCP · [catalog.codehall.io](https://catalog.codehall.io) | 3070 |
+| `apps/email-checker` | **MX Check** — validação de e-mail por API key · [email-checker.codehall.io](https://email-checker.codehall.io) | 3072 |
 
 ```bash
 pnpm install
@@ -61,7 +61,7 @@ do projeto (arquivo é gitignored — peça o token para o time):
   "mcpServers": {
     "catalog": {
       "type": "http",
-      "url": "https://hiki9.inboxzero.space/api/mcp",
+      "url": "https://catalog.codehall.io/api/mcp",
       "headers": { "Authorization": "Bearer ${CATALOG_MCP_TOKEN}" }
     }
   }

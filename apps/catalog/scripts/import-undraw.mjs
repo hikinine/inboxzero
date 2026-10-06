@@ -13,7 +13,7 @@ const MANIFEST = path.join(__dirname, 'undraw-manifest.json');
 const DONE = path.join(__dirname, 'undraw-done.json');
 
 const BUILD_ID = 'nS41BRGVYK4TTVjGNap_q'; // build-id do Next do undraw (pode expirar → há fallback)
-const MCP = 'https://hiki9.inboxzero.space/api/mcp';
+const MCP = 'https://catalog.codehall.io/api/mcp';
 const COLLECTION = 'UNDRAW';
 const CONC = 6;
 

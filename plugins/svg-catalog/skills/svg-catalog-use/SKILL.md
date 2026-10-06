@@ -2,7 +2,7 @@
 name: svg-catalog-use
 description: >-
   Busca, escolhe e usa ilustrações SVG do catálogo Clickmax
-  (hiki9.inboxzero.space) em código, landing pages e apresentações. Use SEMPRE
+  (catalog.codehall.io) em código, landing pages e apresentações. Use SEMPRE
   que o usuário quiser PEGAR/USAR uma ilustração existente — "que svg tem pra
   dashboard?", "pega uma illustration do catálogo", "usa algo da collection CX",
   "acha um svg de funil/vendas/atendimento", "quero uns svgs pra essa tela",
@@ -12,7 +12,7 @@ description: >-
 
 # Usar SVGs do catálogo Clickmax
 
-Catálogo: **https://hiki9.inboxzero.space** (~1.900 peças).
+Catálogo: **https://catalog.codehall.io** (~1.900 peças).
 Tools: `mcp__catalog__search_screens`, `get_screen`, `list_collections`, `list_tags`.
 
 > Para **criar** peças novas, use a skill `svg-catalog-create` — não esta.
@@ -51,11 +51,11 @@ get_screen { idOrSlug }   → { id, slug, name, description, svg, width, height,
 
 **Via HTTP** (sem MCP — bom para `<img>`, download ou script):
 ```
-https://hiki9.inboxzero.space/api/screens/<slug>/raw     → o SVG cru (content-type image/svg+xml)
-https://hiki9.inboxzero.space/api/screens?q=&collection=  → listagem JSON
+https://catalog.codehall.io/api/screens/<slug>/raw     → o SVG cru (content-type image/svg+xml)
+https://catalog.codehall.io/api/screens?q=&collection=  → listagem JSON
 ```
 ```bash
-curl -s "https://hiki9.inboxzero.space/api/screens/cx-hero-glow/raw" -o hero.svg
+curl -s "https://catalog.codehall.io/api/screens/cx-hero-glow/raw" -o hero.svg
 ```
 
 **Em lote pela UI**: no catálogo dá pra multi-selecionar e usar **Baixar .zip** ou

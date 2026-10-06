@@ -139,7 +139,7 @@ export function Pipeline() {
 // ---------- 6. API showcase ---------------------------------------------------
 
 const SINGLE_REQ = [
-  `curl -X POST https://email-checker.inboxzero.space/api/v1/verify \\`,
+  `curl -X POST https://email-checker.codehall.io/api/v1/verify \\`,
   `  -H "Authorization: Bearer ek_sua_chave" \\`,
   `  -d '{ "email": "ghost@gmail.com", "smtp": true }'`,
 ];
@@ -153,7 +153,7 @@ const SINGLE_RES = [
   `}`,
 ];
 const BATCH_REQ = [
-  `curl -X POST https://email-checker.inboxzero.space/api/v1/verify \\`,
+  `curl -X POST https://email-checker.codehall.io/api/v1/verify \\`,
   `  -H "Authorization: Bearer ek_sua_chave" \\`,
   `  -d '{ "emails": ["a@gmail.com", "b@temp.com", …] }'`,
 ];

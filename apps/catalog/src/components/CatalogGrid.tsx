@@ -157,9 +157,9 @@ export function CatalogGrid({
   async function copyPrompt() {
     const lines = selList.map((s) => `- ${s.slug}  (${s.name})`).join('\n');
     const prompt = `Ingira estes SVGs do catálogo (vetor nativo, fundo transparente).
-Base: https://hiki9.inboxzero.space
+Base: https://catalog.codehall.io
 Para cada slug, o SVG puro está em:  GET /api/screens/<slug>/raw  (image/svg+xml)
-Embed direto:  <img src="https://hiki9.inboxzero.space/api/screens/<slug>/raw">
+Embed direto:  <img src="https://catalog.codehall.io/api/screens/<slug>/raw">
 
 Itens selecionados (${selCount}):
 ${lines}

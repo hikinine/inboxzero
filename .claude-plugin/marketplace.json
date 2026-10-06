@@ -7,7 +7,7 @@
     {
       "name": "svg-catalog",
       "source": "./plugins/svg-catalog",
-      "description": "Skills para criar e consumir os SVGs do catálogo Clickmax (hiki9.inboxzero.space)."
+      "description": "Skills para criar e consumir os SVGs do catálogo Clickmax (catalog.codehall.io)."
     }
   ]
 }

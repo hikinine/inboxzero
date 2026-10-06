@@ -1,7 +1,7 @@
 # Autoria de ilustrações SVG → Catálogo Clickmax (guia para a sessão)
 
 Objetivo: **criar ilustrações SVG nativas (vetor) e publicá-las no catálogo em produção via MCP.**
-Catálogo: https://hiki9.inboxzero.space · preview em **fundo escuro**.
+Catálogo: https://catalog.codehall.io · preview em **fundo escuro**.
 
 ---
 
@@ -45,7 +45,7 @@ function hub(cx, cy, r) {
 
 ## 3. Escrever no MCP do catálogo
 
-O MCP de **produção** já está configurado em `.mcp.json` (server `catalog`, URL `https://hiki9.inboxzero.space/api/mcp`, Bearer token). Após reiniciar, as tools aparecem como `mcp__catalog__*`.
+O MCP de **produção** já está configurado em `.mcp.json` (server `catalog`, URL `https://catalog.codehall.io/api/mcp`, Bearer token). Após reiniciar, as tools aparecem como `mcp__catalog__*`.
 
 Tools disponíveis:
 | Tool | Args | Faz |
@@ -65,7 +65,7 @@ Tools disponíveis:
 
 **Fallback (se o MCP não estiver carregado)** — HTTP direto com `node --input-type=module`:
 ```js
-const r = await fetch('https://hiki9.inboxzero.space/api/mcp', {
+const r = await fetch('https://catalog.codehall.io/api/mcp', {
   method: 'POST',
   headers: { authorization: 'Bearer <CATALOG_MCP_TOKEN prod>', 'content-type': 'application/json' },
   body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'tools/call',
@@ -102,7 +102,7 @@ Depois `Read preview.png` para inspecionar. (Para lote, monte um contact-sheet e
 2. Autorar o(s) SVG (arquivo) — hub CX + cards conforme §2.
 3. Render-check no fundo escuro (§4) → `Read` o PNG → ajustar.
 4. Publicar via `add_screen` (§3).
-5. Conferir: `search_screens` ou abrir https://hiki9.inboxzero.space.
+5. Conferir: `search_screens` ou abrir https://catalog.codehall.io.
 
 ## Arquétipos que já existem (para reaproveitar/variar)
 - **Hub-diagramas** (coleção `Diagramas`): CX lime central + nós/cards ligados por linhas tracejadas. Layouts: spokes, funil, pipeline (setas), convergência, fan-out, timeline, anel circular, fontes→saída, rede, lista vertical.
