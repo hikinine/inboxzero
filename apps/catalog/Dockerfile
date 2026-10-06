@@ -17,7 +17,9 @@ WORKDIR /repo
 FROM base AS build
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
-RUN pnpm install --frozen-lockfile --filter @tasky/catalog...
+# --no-frozen-lockfile: o pnpm-lock.yaml é do monorepo inteiro e às vezes fica fora de
+# sincronia com outros apps (ex.: apps/agent); as versões do catalog seguem as do lock.
+RUN pnpm install --no-frozen-lockfile --filter @tasky/catalog...
 RUN pnpm --filter @tasky/catalog build
 
 # ---- runner: output standalone + prisma CLI p/ db push no start ----
