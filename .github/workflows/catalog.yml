@@ -1,0 +1,59 @@
+name: Catalog — Build & Deploy
+
+# Push na main que mexa no catalog → builda apps/catalog/Dockerfile, publica no
+# ghcr.io e dispara o deploy no Dokploy (cloud.codehall.io) pelo webhook do app.
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/catalog/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/catalog.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: catalog-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/catalog/Dockerfile
+          # O host do Dokploy é amd64.
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/hikinine/catalog:production
+            ghcr.io/hikinine/catalog:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=catalog
+          cache-to: type=gha,mode=max,scope=catalog
+
+      - name: Deploy no Dokploy
+        env:
+          WEBHOOK: ${{ secrets.DOKPLOY_CATALOG_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::DOKPLOY_CATALOG_WEBHOOK não configurado — a imagem subiu, mas o deploy não foi disparado."
+            exit 0
+          fi
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 10 -X POST "$WEBHOOK"
