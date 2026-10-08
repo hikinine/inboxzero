@@ -12,6 +12,7 @@ export interface ContentEntry {
   tags: string[];
   featured?: boolean;
   previewHeight?: number;
+  collection?: string;
 }
 
 export interface CategoryDef {
@@ -34,6 +35,7 @@ export const CATEGORIES: CategoryDef[] = [
   { kind: 'BLOCK', name: 'Footer', description: 'Rodapés com colunas de links e newsletter.', order: 90 },
   { kind: 'BLOCK', name: 'Autenticação', description: 'Login, cadastro e recuperação de senha.', order: 100 },
   { kind: 'BLOCK', name: 'Logo Cloud', description: 'Faixas de logos de clientes e integrações.', order: 110 },
+  { kind: 'BLOCK', name: 'Processo', description: 'Etapas, timelines e metodologia de trabalho.', order: 65 },
   // Componentes
   { kind: 'COMPONENT', name: 'Botões', description: 'Variantes, tamanhos, ícones, estados e grupos.', order: 5 },
   { kind: 'COMPONENT', name: 'Cards', description: 'Cards de conteúdo, métricas e produto.', order: 10 },
@@ -45,6 +47,7 @@ export const CATEGORIES: CategoryDef[] = [
   // Páginas
   { kind: 'PAGE', name: 'Dashboard', description: 'Visões gerais com KPIs, gráficos e listas.', order: 10 },
   { kind: 'PAGE', name: 'Settings', description: 'Páginas de configurações e perfil.', order: 20 },
+  { kind: 'PAGE', name: 'Landing', description: 'Landing pages completas, compostas pelos blocos do catálogo.', order: 5 },
   // Ilustrações
   { kind: 'ILLUSTRATION', name: 'Beam', description: 'Feixes de luz percorrendo conectores entre nós — integrações, pipelines e fluxos de IA.', order: 10 },
   { kind: 'ILLUSTRATION', name: 'Orbit', description: 'Elementos orbitando um núcleo — ecossistemas e integrações.', order: 20 },
@@ -116,4 +119,17 @@ export const CONTENT: ContentEntry[] = [
   { file: 'illustrations/beam/design-to-deploy-beam.tsx', name: 'Design to Deploy Beam', kind: 'ILLUSTRATION', category: 'Beam', description: 'Pipeline Figma → Next.js → Claude → Deploy com feixes entre as etapas.', tags: ['beam', 'pipeline', 'deploy', 'animado'] },
   { file: 'illustrations/text/shimmer-text.tsx', name: 'Shimmer Text', kind: 'ILLUSTRATION', category: 'Text', description: 'Brilho atravessando o título em loop.', tags: ['text', 'shimmer', 'animado'] },
   { file: 'illustrations/ripple/map-pin-ripple.tsx', name: 'Map Pin Ripple', kind: 'ILLUSTRATION', category: 'Ripple', description: 'Pin principal emitindo ondas num mapa com pins secundários pulsando.', tags: ['ripple', 'mapa', 'animado'] },
+  // ── Codehall (seções do site codehall.io) ──
+  { file: 'blocks/navbar/codehall-navbar.tsx', name: 'Codehall · Navbar', kind: 'BLOCK', category: 'Navbar', collection: 'Codehall', description: 'Marca com subtítulo, cinco links, CTA em pill com seta e menu lateral no mobile.', tags: ['codehall', 'navbar'] },
+  { file: 'blocks/hero/codehall-hero.tsx', name: 'Codehall · Hero', kind: 'BLOCK', category: 'Hero', collection: 'Codehall', description: 'Painel escuro com corte diagonal, título leve/negrito, CTAs, três fatos, três mockups (chat, NF-e, humano no loop) e marquee de stack.', tags: ['codehall', 'hero', 'mockup', 'animado'], featured: true },
+  { file: 'blocks/logo-cloud/codehall-marquee.tsx', name: 'Codehall · Marquee de stack', kind: 'BLOCK', category: 'Logo Cloud', collection: 'Codehall', description: 'Faixa rolante com modelos e infraestrutura (Claude, OpenAI, AWS, Cloudflare…).', tags: ['codehall', 'marquee', 'logos'] },
+  { file: 'blocks/features/codehall-areas.tsx', name: 'Codehall · Áreas de atuação', kind: 'BLOCK', category: 'Features', collection: 'Codehall', description: 'Split de título e texto + grade de 12 setores com ícone, rótulo, título e descrição.', tags: ['codehall', 'areas', 'grid'], featured: true },
+  { file: 'blocks/features/codehall-capacidades.tsx', name: 'Codehall · Capacidades', kind: 'BLOCK', category: 'Features', collection: 'Codehall', description: 'Oito capacidades em linhas expansíveis com número, categoria, ciclo típico e chips de tecnologia.', tags: ['codehall', 'capacidades', 'accordion'] },
+  { file: 'blocks/processo/codehall-processo.tsx', name: 'Codehall · Processo', kind: 'BLOCK', category: 'Processo', collection: 'Codehall', description: 'Painel escuro com cinco etapas numeradas, prazo, descrição e entregável.', tags: ['codehall', 'processo', 'timeline'] },
+  { file: 'blocks/pricing/codehall-contratacao.tsx', name: 'Codehall · Modelos de contratação', kind: 'BLOCK', category: 'Pricing', collection: 'Codehall', description: 'Quatro planos sem preço, o primeiro em destaque sólido com CTA.', tags: ['codehall', 'planos', 'contratacao'] },
+  { file: 'blocks/features/codehall-principios.tsx', name: 'Codehall · Princípios', kind: 'BLOCK', category: 'Features', collection: 'Codehall', description: 'Painel escuro com intro e oito princípios de engenharia em duas colunas.', tags: ['codehall', 'principios', 'checks'] },
+  { file: 'blocks/faq/codehall-faq.tsx', name: 'Codehall · FAQ', kind: 'BLOCK', category: 'FAQ', collection: 'Codehall', description: 'Intro com link de contato e acordeão de sete perguntas.', tags: ['codehall', 'faq'] },
+  { file: 'blocks/cta/codehall-cta.tsx', name: 'Codehall · CTA de contato', kind: 'BLOCK', category: 'CTA', collection: 'Codehall', description: 'Painel no acento com corte diagonal, botão sólido com ícone e três garantias.', tags: ['codehall', 'cta', 'contato'] },
+  { file: 'blocks/footer/codehall-footer.tsx', name: 'Codehall · Footer', kind: 'BLOCK', category: 'Footer', collection: 'Codehall', description: 'Tagline, cinco links e copyright numa linha.', tags: ['codehall', 'footer'] },
+  { file: 'pages/landing/codehall-landing.tsx', name: 'Codehall · Landing completa', kind: 'PAGE', category: 'Landing', collection: 'Codehall', description: 'A landing de codehall.io inteira, composta pelos onze blocos da coleção.', tags: ['codehall', 'landing', 'software-house'], featured: true, previewHeight: 900 },
 ];

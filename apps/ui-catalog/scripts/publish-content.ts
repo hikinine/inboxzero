@@ -58,6 +58,7 @@ async function main() {
       description: entry.description,
       tags: entry.tags,
       featured: entry.featured ?? false,
+      ...(entry.collection ? { collection: entry.collection } : {}),
       ...(entry.previewHeight ? { previewHeight: entry.previewHeight } : {}),
     };
     try {
