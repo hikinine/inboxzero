@@ -35,6 +35,7 @@ export const CATEGORIES: CategoryDef[] = [
   { kind: 'BLOCK', name: 'Autenticação', description: 'Login, cadastro e recuperação de senha.', order: 100 },
   { kind: 'BLOCK', name: 'Logo Cloud', description: 'Faixas de logos de clientes e integrações.', order: 110 },
   // Componentes
+  { kind: 'COMPONENT', name: 'Botões', description: 'Variantes, tamanhos, ícones, estados e grupos.', order: 5 },
   { kind: 'COMPONENT', name: 'Cards', description: 'Cards de conteúdo, métricas e produto.', order: 10 },
   { kind: 'COMPONENT', name: 'Formulários', description: 'Campos, grupos e layouts de formulário.', order: 20 },
   { kind: 'COMPONENT', name: 'Tabelas', description: 'Tabelas de dados com ações e status.', order: 30 },
@@ -96,4 +97,23 @@ export const CONTENT: ContentEntry[] = [
   // ── Páginas ──
   { file: 'pages/dashboard/dashboard-visao-geral.tsx', name: 'Dashboard visão geral', kind: 'PAGE', category: 'Dashboard', description: 'Sidebar, header com busca, KPIs, gráfico de área e tabela de negócios.', tags: ['dashboard', 'crm', 'saas'], featured: true },
   { file: 'pages/settings/settings-perfil.tsx', name: 'Settings de perfil', kind: 'PAGE', category: 'Settings', description: 'Menu lateral e cards de informações, preferências e zona de perigo.', tags: ['settings', 'perfil'] },
+  // ── Lote 2 ──
+  { file: 'components/botoes/botoes-variantes.tsx', name: 'Botões: variantes e estados', kind: 'COMPONENT', category: 'Botões', description: 'Todas as variantes e tamanhos, ícones, loading, destrutivo e grupo de botões.', tags: ['button', 'variantes'], featured: true },
+  { file: 'components/formularios/input-group-icones.tsx', name: 'Inputs com addons', kind: 'COMPONENT', category: 'Formulários', description: 'Busca com atalho, prefixo de URL, botão inline, senha com olho e textarea com contador.', tags: ['input', 'form', 'input-group'] },
+  { file: 'components/feedback/badges-status.tsx', name: 'Badges de status', kind: 'COMPONENT', category: 'Feedback', description: 'Status com ponto, com ícone semântico e contadores.', tags: ['badge', 'status'] },
+  { file: 'components/cards/card-progresso-meta.tsx', name: 'Card de metas com progresso', kind: 'COMPONENT', category: 'Cards', description: 'Três metas com barra, rótulo e valor; avatares do time no rodapé.', tags: ['card', 'progress', 'metas'] },
+  { file: 'components/navegacao/command-palette.tsx', name: 'Command palette', kind: 'COMPONENT', category: 'Navegação', description: 'Paleta de comandos (cmdk) com grupos, ícones e atalhos.', tags: ['command', 'cmdk', 'busca'], featured: true },
+  { file: 'components/navegacao/breadcrumb-paginacao.tsx', name: 'Breadcrumb e paginação', kind: 'COMPONENT', category: 'Navegação', description: 'Trilha com reticências e paginação com página ativa.', tags: ['breadcrumb', 'pagination'] },
+  { file: 'components/cards/skeleton-loading.tsx', name: 'Skeleton de carregamento', kind: 'COMPONENT', category: 'Cards', description: 'Esqueleto de card e de lista com avatares.', tags: ['skeleton', 'loading'] },
+  { file: 'components/formularios/calendario-agendamento.tsx', name: 'Calendário de agendamento', kind: 'COMPONENT', category: 'Formulários', description: 'Calendário com horários disponíveis e confirmação.', tags: ['calendar', 'agendamento', 'form'] },
+  { file: 'components/cards/timeline-atividades.tsx', name: 'Timeline de atividades', kind: 'COMPONENT', category: 'Cards', description: 'Linha do tempo vertical com ícone por tipo de evento e avatar.', tags: ['timeline', 'atividades', 'crm'] },
+  { file: 'components/navegacao/carousel-depoimentos.tsx', name: 'Carousel de depoimentos', kind: 'COMPONENT', category: 'Navegação', description: 'Carrossel (embla) de cards de depoimento com setas.', tags: ['carousel', 'depoimentos'] },
+  { file: 'components/formularios/slider-switch-config.tsx', name: 'Sliders e switches de configuração', kind: 'COMPONENT', category: 'Formulários', description: 'Limites com slider e permissões com switch num card de configuração de IA.', tags: ['slider', 'switch', 'settings'] },
+  { file: 'blocks/depoimentos/depoimento-destaque.tsx', name: 'Depoimento em destaque', kind: 'BLOCK', category: 'Depoimentos', description: 'Uma citação grande centralizada com autor.', tags: ['depoimento', 'prova-social'] },
+  { file: 'blocks/features/como-funciona-passos.tsx', name: 'Como funciona em passos', kind: 'BLOCK', category: 'Features', description: 'Três passos numerados ligados por uma linha.', tags: ['passos', 'como-funciona'] },
+  { file: 'blocks/pricing/tabela-comparativa.tsx', name: 'Tabela comparativa de planos', kind: 'BLOCK', category: 'Pricing', description: 'Recursos por plano com checks e coluna em destaque.', tags: ['pricing', 'tabela', 'comparativo'] },
+  { file: 'illustrations/orbit/avatar-orbit.tsx', name: 'Avatar Orbit', kind: 'ILLUSTRATION', category: 'Orbit', description: 'Contatos orbitam um centro de conversas em dois anéis.', tags: ['orbit', 'avatares', 'animado'] },
+  { file: 'illustrations/beam/design-to-deploy-beam.tsx', name: 'Design to Deploy Beam', kind: 'ILLUSTRATION', category: 'Beam', description: 'Pipeline Figma → Next.js → Claude → Deploy com feixes entre as etapas.', tags: ['beam', 'pipeline', 'deploy', 'animado'] },
+  { file: 'illustrations/text/shimmer-text.tsx', name: 'Shimmer Text', kind: 'ILLUSTRATION', category: 'Text', description: 'Brilho atravessando o título em loop.', tags: ['text', 'shimmer', 'animado'] },
+  { file: 'illustrations/ripple/map-pin-ripple.tsx', name: 'Map Pin Ripple', kind: 'ILLUSTRATION', category: 'Ripple', description: 'Pin principal emitindo ondas num mapa com pins secundários pulsando.', tags: ['ripple', 'mapa', 'animado'] },
 ];
