@@ -11,6 +11,7 @@ import { Stats } from '@/components/landing/stats';
 import { ShowcaseTabs } from '@/components/landing/showcase-tabs';
 import { InstallTabs } from '@/components/landing/install-tabs';
 import { Faq } from '@/components/landing/faq';
+import { McpSetup } from '@/components/landing/mcp-setup';
 import DataFlowBeam from '@/content/illustrations/beam/data-flow-beam';
 
 export const dynamic = 'force-dynamic';
@@ -54,7 +55,7 @@ export default async function HomePage() {
               <Button size="lg" nativeButton={false} render={<Link href="/blocks" />}>
                 Explorar blocos <ArrowRight data-icon="inline-end" />
               </Button>
-              <Button size="lg" variant="outline" nativeButton={false} render={<Link href="/docs#mcp" />}>
+              <Button size="lg" variant="outline" nativeButton={false} render={<Link href="#mcp" />}>
                 <Terminal data-icon="inline-start" /> Configurar MCP
               </Button>
             </div>
@@ -159,6 +160,16 @@ export default async function HomePage() {
                 <Palette data-icon="inline-start" /> Ver ilustrações
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* MCP */}
+      <section id="mcp" className="scroll-mt-20 border-t">
+        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+          <SectionHead eyebrow="claude code · mcp" title="Instale o MCP em dois minutos." text="Quatro passos e o Claude passa a buscar, criar e validar itens deste catálogo direto da conversa. Funciona também no Claude Desktop, Cursor e Windsurf com o mesmo JSON." />
+          <div className="mt-10">
+            <McpSetup />
           </div>
         </div>
       </section>
