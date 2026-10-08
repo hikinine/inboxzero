@@ -2,13 +2,15 @@ import { createHighlighter, type Highlighter } from 'shiki';
 import { CopyButton } from './copy-button';
 
 // Destaque de sintaxe no servidor (shiki, tema duplo claro/escuro via variáveis CSS — ver site.css).
+type Lang = 'tsx' | 'json' | 'bash' | 'ts' | 'toml';
+
 const g = globalThis as unknown as { __shiki?: Promise<Highlighter> };
 function highlighter() {
-  g.__shiki ??= createHighlighter({ themes: ['github-light', 'github-dark'], langs: ['tsx', 'json', 'bash', 'ts'] });
+  g.__shiki ??= createHighlighter({ themes: ['github-light', 'github-dark'], langs: ['tsx', 'json', 'bash', 'ts', 'toml'] });
   return g.__shiki;
 }
 
-export async function highlight(code: string, lang: 'tsx' | 'json' | 'bash' | 'ts' = 'tsx'): Promise<string> {
+export async function highlight(code: string, lang: Lang = 'tsx'): Promise<string> {
   const h = await highlighter();
   return h.codeToHtml(code, { lang, themes: { light: 'github-light', dark: 'github-dark' }, defaultColor: false });
 }
@@ -21,7 +23,7 @@ export async function CodeBlock({
   maxHeight,
 }: {
   code: string;
-  lang?: 'tsx' | 'json' | 'bash' | 'ts';
+  lang?: Lang;
   title?: string;
   className?: string;
   maxHeight?: number | string;

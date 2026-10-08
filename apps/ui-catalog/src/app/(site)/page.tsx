@@ -167,7 +167,7 @@ export default async function HomePage() {
       {/* MCP */}
       <section id="mcp" className="scroll-mt-20 border-t">
         <div className="mx-auto w-full max-w-7xl px-6 py-20">
-          <SectionHead eyebrow="claude code · mcp" title="Instale o MCP em dois minutos." text="Quatro passos e o Claude passa a buscar, criar e validar itens deste catálogo direto da conversa. Funciona também no Claude Desktop, Cursor e Windsurf com o mesmo JSON." />
+          <SectionHead eyebrow="mcp · claude code · claude desktop · codex · cursor · windsurf · copilot · gemini" title="Instale o MCP em dois minutos." text="Escolha seu cliente, cole a configuração, exporte o token e reinicie. O Claude (ou o Codex, Cursor, Windsurf, Copilot, Gemini) passa a buscar, criar e validar itens deste catálogo direto da conversa." />
           <div className="mt-10">
             <McpSetup />
           </div>
