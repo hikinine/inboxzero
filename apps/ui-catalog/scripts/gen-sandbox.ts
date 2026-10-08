@@ -43,8 +43,10 @@ const twAnimate = fs.readFileSync(path.join(nm, 'tw-animate-css/dist/tw-animate.
 const shadcnCss = fs.readFileSync(path.join(nm, 'shadcn/dist/tailwind.css'), 'utf8');
 
 const stripImports = (css: string) => css.replace(/^\s*@import\s+[^;]+;\s*$/gm, '');
+// Sem `@import "tailwindcss"` explícito: o runtime do browser injeta esse import sozinho quando o
+// CSS não tem nenhum @import — e assim, se o <style> for recriado na hidratação (conteúdo antes do
+// `type`), o browser não dispara um fetch de "tailwindcss" relativo à página.
 const css = [
-  '@import "tailwindcss";',
   '/* tw-animate-css */',
   stripImports(twAnimate),
   '/* shadcn/tailwind.css */',
