@@ -1,0 +1,35 @@
+// Mapa especificador → loader. Cada entrada vira um chunk separado (import() dinâmico), então o
+// sandbox só baixa o que o item realmente importa. Os módulos de @/components/ui/* são gerados.
+import { UI_MODULE_LOADERS } from './generated/ui-module-loaders';
+
+export const MODULE_LOADERS: Record<string, () => Promise<unknown>> = {
+  react: () => import('react'),
+  'react-dom': () => import('react-dom'),
+  'react/jsx-runtime': () => import('react/jsx-runtime'),
+  'react/jsx-dev-runtime': () => import('react/jsx-dev-runtime'),
+  'lucide-react': () => import('lucide-react'),
+  motion: () => import('motion'),
+  'motion/react': () => import('motion/react'),
+  'framer-motion': () => import('motion/react'),
+  recharts: () => import('recharts'),
+  'class-variance-authority': () => import('class-variance-authority'),
+  cn: () => import('cn'),
+  cmdk: () => import('cmdk'),
+  'date-fns': () => import('date-fns'),
+  'react-day-picker': () => import('react-day-picker'),
+  'embla-carousel-react': () => import('embla-carousel-react'),
+  'input-otp': () => import('input-otp'),
+  'react-resizable-panels': () => import('react-resizable-panels'),
+  '@base-ui/react': () => import('@base-ui/react'),
+  '@base-ui/react/button': () => import('@base-ui/react/button'),
+  '@base-ui/react/dialog': () => import('@base-ui/react/dialog'),
+  '@base-ui/react/menu': () => import('@base-ui/react/menu'),
+  '@base-ui/react/merge-props': () => import('@base-ui/react/merge-props'),
+  '@base-ui/react/use-render': () => import('@base-ui/react/use-render'),
+  '@/lib/utils': () => import('@/lib/utils'),
+  '@/hooks/use-mobile': () => import('@/hooks/use-mobile'),
+  'next/link': () => import('./shims/next-link'),
+  'next/image': () => import('./shims/next-image'),
+  'next/navigation': () => import('./shims/next-navigation'),
+  ...UI_MODULE_LOADERS,
+};

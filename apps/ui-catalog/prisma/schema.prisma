@@ -1,0 +1,110 @@
+// Catálogo de UI (componentes, blocos, páginas e ilustrações shadcn/ui).
+// Migrations do monorepo são problemáticas (shadow DB); use `prisma db push`.
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" p/ dev local; "debian-openssl-3.0.x" p/ a imagem de produção (node:22-bookworm-slim).
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("UI_CATALOG_DATABASE_URL")
+}
+
+// Tipo do item. Define a aba onde ele aparece e como o preview é enquadrado.
+enum ItemKind {
+  COMPONENT    // peça pequena (botão, card, input…) — preview em tamanho natural, centralizado
+  BLOCK        // seção de página (hero, pricing, footer…) — preview em viewport desktop escalado
+  PAGE         // página inteira (dashboard, login…) — idem BLOCK
+  ILLUSTRATION // ilustração animada (beam, orbit, marquee…) — preview centralizado
+}
+
+enum ItemStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// Categoria dentro de um tipo (ex.: BLOCK/hero, ILLUSTRATION/beam). Vira seção + aba na UI.
+model Category {
+  id          String   @id @default(cuid())
+  kind        ItemKind
+  slug        String
+  name        String
+  description String?
+  order       Int      @default(100)
+  items       Item[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([kind, slug])
+  @@index([kind, order])
+  @@map("categories")
+}
+
+// Agrupa itens por projeto/família/tema (transversal aos tipos).
+model Collection {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  items       Item[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("collections")
+}
+
+// Um item do catálogo: um arquivo TSX auto-contido que exporta um componente React (default).
+model Item {
+  id                   String     @id @default(cuid())
+  slug                 String     @unique
+  name                 String
+  description          String?
+  kind                 ItemKind   @default(BLOCK)
+  code                 String     // fonte TSX completa (imports de @/components/ui/*, motion/react, lucide-react…)
+  dependencies         String[]   @default([]) // pacotes npm extras (ex.: recharts, motion)
+  registryDependencies String[]   @default([]) // itens do registry shadcn (ex.: button, card)
+  previewHeight        Int?       // altura sugerida do preview em px (opcional)
+  featured             Boolean    @default(false)
+  status               ItemStatus @default(PUBLISHED)
+  source               String     @default("manual") // manual | mcp | seed | import
+  categoryId           String?
+  category             Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  collectionId         String?
+  collection           Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  tags                 ItemTag[]
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@index([kind])
+  @@index([categoryId])
+  @@index([collectionId])
+  @@index([status])
+  @@index([featured])
+  @@index([createdAt])
+  @@index([name])
+  @@map("items")
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  slug  String    @unique
+  name  String
+  items ItemTag[]
+
+  @@map("tags")
+}
+
+// Junction N:N Item↔Tag.
+model ItemTag {
+  itemId String
+  tagId  String
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+  @@index([tagId])
+  @@map("item_tags")
+}

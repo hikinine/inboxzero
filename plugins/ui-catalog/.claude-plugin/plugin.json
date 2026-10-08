@@ -1,0 +1,5 @@
+{
+  "name": "ui-catalog",
+  "description": "Criar e consumir componentes, blocos, páginas e ilustrações shadcn/ui do UI Catalog (ui.codehall.io): autoria validada e publicação via MCP, e busca/instalação dos itens existentes.",
+  "version": "1.0.0"
+}

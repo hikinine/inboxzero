@@ -34,7 +34,20 @@ services:
     volumes:
       - email_checker_postgres_data:/var/lib/postgresql/data
 
+  # Postgres dedicado ao catálogo de UI (apps/ui-catalog) — isolado dos demais.
+  ui-catalog-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ui_catalog
+    ports:
+      - "5436:5432"
+    volumes:
+      - ui_catalog_postgres_data:/var/lib/postgresql/data
+
 volumes:
   postgres_data:
   catalog_postgres_data:
   email_checker_postgres_data:
+  ui_catalog_postgres_data:

@@ -1,0 +1,61 @@
+name: UI Catalog — Build & Deploy
+
+# Push na main que mexa no ui-catalog → builda apps/ui-catalog/Dockerfile, publica no
+# ghcr.io e dispara o deploy no Dokploy (cloud.codehall.io) pelo webhook do app.
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/ui-catalog/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/ui-catalog.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ui-catalog-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/ui-catalog/Dockerfile
+          # O host do Dokploy é amd64.
+          platforms: linux/amd64
+          push: true
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=https://ui.codehall.io
+          tags: |
+            ghcr.io/hikinine/ui-catalog:production
+            ghcr.io/hikinine/ui-catalog:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=ui-catalog
+          cache-to: type=gha,mode=max,scope=ui-catalog
+
+      - name: Deploy no Dokploy
+        env:
+          WEBHOOK: ${{ secrets.DOKPLOY_UI_CATALOG_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::DOKPLOY_UI_CATALOG_WEBHOOK não configurado — a imagem subiu, mas o deploy não foi disparado."
+            exit 0
+          fi
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 10 -X POST "$WEBHOOK"

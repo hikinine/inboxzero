@@ -1,0 +1,5 @@
+.next/
+node_modules/
+tsconfig.tsbuildinfo
+# gerados por scripts/gen-sandbox.ts (postinstall/predev/prebuild)
+src/sandbox/generated/

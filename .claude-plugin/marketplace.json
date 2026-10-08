@@ -8,6 +8,11 @@
       "name": "svg-catalog",
       "source": "./plugins/svg-catalog",
       "description": "Skills para criar e consumir os SVGs do catálogo Clickmax (catalog.codehall.io)."
+    },
+    {
+      "name": "ui-catalog",
+      "source": "./plugins/ui-catalog",
+      "description": "Skills para criar e consumir componentes, blocos, páginas e ilustrações shadcn/ui do UI Catalog (ui.codehall.io)."
     }
   ]
 }
