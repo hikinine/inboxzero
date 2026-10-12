@@ -15,6 +15,15 @@ import { ENTRIES as COMPONENTS_2 } from './entries/components-2';
 import { ENTRIES as COMPONENTS_3 } from './entries/components-3';
 import { ENTRIES as PAGES } from './entries/pages';
 import { ENTRIES as ILLUSTRATIONS } from './entries/illustrations';
+import { ENTRIES as W2_MARKETING_A } from './entries/wave2-marketing-a';
+import { ENTRIES as W2_MARKETING_B } from './entries/wave2-marketing-b';
+import { ENTRIES as W2_MARKETING_C } from './entries/wave2-marketing-c';
+import { ENTRIES as W2_DASHBOARD } from './entries/wave2-dashboard';
+import { ENTRIES as W2_ECOMMERCE } from './entries/wave2-ecommerce';
+import { ENTRIES as W2_COMPONENTS_A } from './entries/wave2-components-a';
+import { ENTRIES as W2_COMPONENTS_B } from './entries/wave2-components-b';
+import { ENTRIES as W2_PAGES } from './entries/wave2-pages';
+import { ENTRIES as W2_ILLUSTRATIONS } from './entries/wave2-illustrations';
 
 export type { CategoryDef } from './taxonomy';
 export { CATEGORIES };
@@ -121,4 +130,13 @@ export const CONTENT: ContentEntry[] = [
   ...COMPONENTS_3,
   ...PAGES,
   ...ILLUSTRATIONS,
+  ...W2_MARKETING_A,
+  ...W2_MARKETING_B,
+  ...W2_MARKETING_C,
+  ...W2_DASHBOARD,
+  ...W2_ECOMMERCE,
+  ...W2_COMPONENTS_A,
+  ...W2_COMPONENTS_B,
+  ...W2_PAGES,
+  ...W2_ILLUSTRATIONS,
 ];

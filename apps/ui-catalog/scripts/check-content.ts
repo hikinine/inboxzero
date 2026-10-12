@@ -63,6 +63,7 @@ async function main() {
     const code = fs.readFileSync(p, 'utf8');
     const r = checkCode(code);
     if (!r.ok) errors.push(`${e.file}: ${r.errors.join(' | ')}`);
+    if (/animate=\{\{[^}]*\b(r|cx|cy):\s*\[/.test(code)) errors.push(`${e.file}: anima atributo SVG r/cx/cy com motion (quebra no navegador) — use scale/x/y`);
     if (/lorem ipsum/i.test(code)) errors.push(`${e.file}: contém lorem ipsum`);
     if (/<img[^>]+src=["']https?:/i.test(code)) errors.push(`${e.file}: imagem remota (<img src="http…">) — use SVG inline, gradiente ou placeholder`);
     const hex = code.match(/#[0-9a-fA-F]{6}\b/g);
