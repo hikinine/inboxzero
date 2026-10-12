@@ -101,7 +101,7 @@ export default function AppShellSidebarColapsavel() {
             <Button variant="ghost" size="icon-sm" aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'} onClick={() => setCollapsed((c) => !c)}>
               <PanelLeft />
             </Button>
-            <span className="text-sm text-muted-foreground">Espaço de trabalho</span>
+            <span className="hidden text-sm text-muted-foreground sm:inline">Espaço de trabalho</span>
             <span className="text-sm text-muted-foreground">/</span>
             <span className="text-sm font-medium">Projetos</span>
             <div className="ml-auto flex items-center gap-1">

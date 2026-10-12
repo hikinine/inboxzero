@@ -16,6 +16,7 @@ export const MODULE_LOADERS: Record<string, () => Promise<unknown>> = {
   cn: () => import('cn'),
   cmdk: () => import('cmdk'),
   'date-fns': () => import('date-fns'),
+  'date-fns/locale': () => import('date-fns/locale'),
   'react-day-picker': () => import('react-day-picker'),
   'embla-carousel-react': () => import('embla-carousel-react'),
   'input-otp': () => import('input-otp'),

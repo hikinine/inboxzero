@@ -4,7 +4,8 @@ import type { LucideIcon } from 'lucide-react'
 import { Bell, Briefcase, CalendarDays, ChevronsUpDown, CreditCard, FileText, Home, Inbox, KanbanSquare, ListChecks, LogOut, Plug, Sparkles, UserRound, Users, Zap } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
   SidebarContent,
@@ -83,7 +84,7 @@ export default function SidebarGruposBadges() {
                         <item.Icon />
                         <span>{item.label}</span>
                       </SidebarMenuButton>
-                      {item.badge && <SidebarMenuBadge className={item.active ? 'bg-primary text-primary-foreground' : 'bg-muted'}>{item.badge}</SidebarMenuBadge>}
+                      {item.badge && <SidebarMenuBadge className="bg-muted text-foreground">{item.badge}</SidebarMenuBadge>}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
@@ -104,7 +105,9 @@ export default function SidebarGruposBadges() {
               <ChevronsUpDown className="text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="start" className="w-56">
-              <DropdownMenuLabel>Minha conta</DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Minha conta</DropdownMenuLabel>
+              </DropdownMenuGroup>
               <DropdownMenuItem>
                 <UserRound /> Perfil
               </DropdownMenuItem>

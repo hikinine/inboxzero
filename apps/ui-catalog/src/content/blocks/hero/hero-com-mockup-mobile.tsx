@@ -41,7 +41,7 @@ export default function HeroComMockupMobile() {
         </div>
 
         <div className="relative mx-auto w-[280px]">
-          <div className="absolute top-20 -left-6 z-10 hidden items-center gap-2 rounded-xl border bg-card p-3 shadow-lg sm:flex lg:-left-16">
+          <div className="absolute top-44 -left-6 z-10 hidden items-center gap-2 rounded-xl border bg-card p-3 shadow-lg sm:flex lg:-left-16">
             <span className="flex size-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
               <QrCode className="size-4" />
             </span>

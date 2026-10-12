@@ -51,7 +51,7 @@ export default function FeaturesAlternadasComMockups() {
 
         <div className="mt-16 space-y-20">
           {LINHAS.map((l, idx) => (
-            <div key={l.tipo} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+            <div key={l.tipo} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16 [&>*]:min-w-0">
               <div className={idx % 2 === 1 ? 'lg:order-last' : ''}>
                 <p className="text-xs font-medium tracking-wider text-primary uppercase">{l.eyebrow}</p>
                 <h3 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{l.titulo}</h3>

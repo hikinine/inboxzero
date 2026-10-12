@@ -5,6 +5,7 @@ import { CalendarPlus, Check, Clock, Globe, Video } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
 
 const MANHA = ['09:00', '09:30', '10:00', '10:30', '11:30']
@@ -57,7 +58,7 @@ export default function AgendaDeHorarios() {
           </div>
 
           <div className="flex justify-center border-b p-6 lg:border-r lg:border-b-0">
-            <Calendar mode="single" selected={date} onSelect={setDate} className="p-0" />
+            <Calendar mode="single" selected={date} onSelect={setDate} locale={ptBR} className="p-0" />
           </div>
 
           <div className="p-6">

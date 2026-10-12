@@ -14,6 +14,7 @@ export const LIB_MODULE_NAMES: readonly string[] = [
   'cn',
   'cmdk',
   'date-fns',
+  'date-fns/locale',
   'react-day-picker',
   'embla-carousel-react',
   'input-otp',

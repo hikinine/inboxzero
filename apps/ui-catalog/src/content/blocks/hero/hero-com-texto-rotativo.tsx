@@ -28,7 +28,7 @@ export default function HeroComTextoRotativo() {
           <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">Automação sem código</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">
             Coloque seus{' '}
-            <span className="relative inline-flex h-[1.15em] overflow-hidden align-bottom">
+            <span className="relative inline-flex h-[1.1em] items-end overflow-hidden align-bottom">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={palavra}

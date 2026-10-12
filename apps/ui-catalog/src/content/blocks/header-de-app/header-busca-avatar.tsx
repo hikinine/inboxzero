@@ -42,10 +42,12 @@ export default function HeaderBuscaAvatar() {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="flex flex-col">
-              <span className="text-sm font-medium text-foreground">Ana Souza</span>
-              <span className="text-xs font-normal">ana@fluxo.app</span>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">Ana Souza</span>
+                <span className="text-xs font-normal">ana@fluxo.app</span>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>

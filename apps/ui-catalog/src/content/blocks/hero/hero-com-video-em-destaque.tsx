@@ -40,14 +40,14 @@ export default function HeroComVideoEmDestaque() {
             <div className="relative aspect-video w-full bg-gradient-to-br from-sky-500/25 via-muted to-violet-500/25">
               <div className="absolute inset-0 bg-[radial-gradient(var(--color-border)_1px,transparent_1px)] opacity-60 [background-size:22px_22px]" />
 
-              <div className="absolute top-[14%] left-[8%] w-40 rounded-lg border bg-background/90 p-3 text-left shadow-sm backdrop-blur">
+              <div className="absolute top-[14%] left-[8%] hidden w-40 rounded-lg border bg-background/90 p-3 text-left shadow-sm backdrop-blur sm:block">
                 <div className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">Hoje</div>
                 <div className="mt-1 text-sm font-medium">14 atendimentos</div>
                 <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
                   <div className="h-full w-3/4 rounded-full bg-emerald-500" />
                 </div>
               </div>
-              <div className="absolute top-[22%] right-[8%] w-44 rounded-lg border bg-background/90 p-3 text-left shadow-sm backdrop-blur">
+              <div className="absolute top-[22%] right-[8%] hidden w-44 rounded-lg border bg-background/90 p-3 text-left shadow-sm backdrop-blur sm:block">
                 <div className="flex items-center gap-2">
                   <span className="size-6 shrink-0 rounded-full bg-gradient-to-br from-sky-400 to-violet-500" />
                   <div className="text-xs">

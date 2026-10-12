@@ -48,7 +48,7 @@ export default function CtaEmCardComMockup() {
             </div>
           </div>
 
-          <div className="w-full translate-y-6 rounded-t-2xl border border-b-0 bg-background p-5 shadow-xl">
+          <div className="w-full translate-y-2 rounded-t-2xl border border-b-0 bg-background p-5 shadow-xl">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Nova cobrança</span>
               <Badge variant="secondary">Rascunho</Badge>
