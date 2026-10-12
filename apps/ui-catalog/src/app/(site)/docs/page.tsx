@@ -31,7 +31,7 @@ const TOC = [
 
 export default function DocsPage() {
   return (
-    <div className="grid w-full gap-10 px-6 lg:px-10 py-10 lg:grid-cols-[220px_minmax(0,1fr)]">
+    <div className="grid mx-auto w-full max-w-screen-2xl gap-10 px-6 lg:px-10 py-10 lg:grid-cols-[220px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-20 lg:self-start">
         <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Docs</div>
         <ul className="space-y-1 text-sm">

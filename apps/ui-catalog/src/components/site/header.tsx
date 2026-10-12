@@ -19,6 +19,8 @@ export function SiteHeader() {
   const router = useRouter();
   const [q, setQ] = useState('');
   const { count, ready } = useFavorites();
+  // Landing e docs são centralizadas (max-w-screen-2xl); as páginas do catálogo ocupam a largura toda.
+  const contained = pathname === '/' || pathname.startsWith('/docs');
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +30,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="flex h-14 w-full items-center gap-3 px-6 lg:px-10">
+      <div className={cn('flex h-14 w-full items-center gap-3 px-6 lg:px-10', contained && 'mx-auto max-w-screen-2xl')}>
         <Link href="/" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight">
           <BrandMark size={22} />
           UI Catalog
