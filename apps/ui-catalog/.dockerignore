@@ -1,0 +1,7 @@
+# Contexto da imagem = só o output do build (feito no CI) + arquivos de runtime.
+*
+!.next/standalone
+!.next/static
+!public
+!prisma
+!docker-entrypoint.sh
