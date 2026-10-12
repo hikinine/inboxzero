@@ -1,11 +1,7 @@
-# Ignore para o build da imagem do catalog (contexto = raiz do repo).
-**/node_modules
-**/.next
-**/dist
-**/.turbo
-.git
-**/.env
-**/.env.*
-**/*.log
-apps/desktop/src-tauri/target
-**/.DS_Store
+# Contexto da imagem = só o output do build (feito no CI) + arquivos de runtime.
+*
+!.next/standalone
+!.next/static
+!public
+!prisma
+!docker-entrypoint.sh
