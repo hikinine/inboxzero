@@ -38,7 +38,7 @@ export default async function KindPage({ params, searchParams }: { params: Promi
   const tabs = [...categories.map((c) => ({ slug: c.slug, name: c.name, count: c.count })), ...(uncategorized.total ? [{ slug: 'outros', name: 'Outros', count: uncategorized.total }] : [])];
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6">
+    <div className="w-full px-6 lg:px-10">
       <header className="flex flex-col gap-4 py-10 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl">
           <nav className="mb-3 flex gap-1 text-xs">
@@ -128,7 +128,7 @@ function Section({
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5">{children}</div>
     </section>
   );
 }

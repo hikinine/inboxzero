@@ -63,11 +63,15 @@ function ErrorPanel({ message }: { message: string }) {
   );
 }
 
+// Estilo inline de propósito: aparece ANTES do @tailwindcss/browser compilar as classes — com
+// className o SVG ficava sem tamanho e virava um círculo gigante ocupando o card inteiro.
+const SPIN_CSS = '@keyframes uic-spin{to{transform:rotate(360deg)}}';
 function Loading() {
   return (
-    <div className="flex min-h-40 items-center justify-center text-muted-foreground">
-      <svg className="size-5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-20" />
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+      <style>{SPIN_CSS}</style>
+      <svg width={18} height={18} viewBox="0 0 24 24" fill="none" aria-hidden style={{ animation: 'uic-spin 0.8s linear infinite' }}>
+        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity={0.25} />
         <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
       </svg>
     </div>

@@ -29,7 +29,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   ].filter(Boolean) as Array<{ label: string; href: string }>;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-8">
+    <div className="w-full px-6 lg:px-10 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">{sp.q ? `Resultados para “${sp.q}”` : 'Explorar'}</h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

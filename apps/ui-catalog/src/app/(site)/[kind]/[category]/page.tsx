@@ -26,7 +26,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ kind:
   if (!cat) notFound();
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6">
+    <div className="w-full px-6 lg:px-10">
       <header className="py-10">
         <nav className="mb-3 text-xs text-muted-foreground">
           <Link href="/" className="hover:text-foreground">

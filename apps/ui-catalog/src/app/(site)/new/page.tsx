@@ -11,7 +11,7 @@ export default async function NewItemPage() {
     prisma.collection.findMany({ orderBy: { name: 'asc' }, select: { slug: true, name: true } }),
   ]);
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-8">
+    <div className="w-full px-6 lg:px-10 py-8">
       <h1 className="text-2xl font-semibold tracking-tight">Novo item</h1>
       <p className="mb-6 mt-1 text-sm text-muted-foreground">
         Cole um TSX auto-contido. O preview compila na hora; a validação confere imports e o export default. Pelo Claude Code é mais rápido: a skill{' '}

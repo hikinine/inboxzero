@@ -28,7 +28,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-3 px-6">
+      <div className="flex h-14 w-full items-center gap-3 px-6 lg:px-10">
         <Link href="/" className="flex items-center gap-2 text-[15px] font-semibold tracking-tight">
           <BrandMark size={22} />
           UI Catalog

@@ -45,7 +45,7 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
   ].join('\n');
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-8">
+    <div className="w-full px-6 lg:px-10 py-8">
       <nav className="mb-4 text-xs text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           Início
@@ -187,7 +187,7 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
           <h2 className="mb-4 text-lg font-semibold tracking-tight">
             Mais em {item.category?.name}
           </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5">
             {related.map((it) => (
               <ItemCard key={it.id} item={it} />
             ))}

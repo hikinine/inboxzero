@@ -28,7 +28,7 @@ export function ItemGrid({
   showKind,
   emptyTitle = 'Nada por aqui ainda',
   emptyDescription = 'Nenhum item corresponde a esses filtros.',
-  columns = 'sm:grid-cols-2 lg:grid-cols-3',
+  columns = 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5',
 }: {
   filters: GridFilters;
   pageSize?: number;
