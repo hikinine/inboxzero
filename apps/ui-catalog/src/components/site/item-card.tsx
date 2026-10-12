@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { ItemMeta } from '@/lib/items';
-import { kindMeta } from '@/lib/site';
+import { isNew, kindMeta } from '@/lib/site';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -34,8 +34,15 @@ export function ItemCard({
       <Link href={href} className="block border-b" tabIndex={-1} aria-hidden>
         <PreviewCard slug={item.slug} kind={item.kind} />
       </Link>
-      {item.featured && (
-        <Badge className="absolute left-2 top-2 bg-brand text-brand-foreground shadow">Destaque</Badge>
+      {(isNew(item.createdAt) || item.featured) && (
+        <div className="absolute left-2 top-2 flex gap-1">
+          {isNew(item.createdAt) && <Badge className="bg-brand text-brand-foreground shadow">Novo</Badge>}
+          {item.featured && (
+            <Badge variant="secondary" className="shadow">
+              Hot
+            </Badge>
+          )}
+        </div>
       )}
       {item.status !== 'PUBLISHED' && (
         <Badge variant="secondary" className="absolute right-2 top-2">

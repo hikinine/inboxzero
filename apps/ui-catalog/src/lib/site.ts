@@ -69,3 +69,16 @@ export function kindMeta(kind: ItemKind): KindMeta {
 export function installCommand(slug: string, base = SITE_URL): string {
   return `npx shadcn@latest add ${base}/r/${slug}.json`;
 }
+
+// Badge "Novo": item publicado há menos de 7 dias (mesmo critério de NEW_DAYS em lib/items).
+export function isNew(createdAt: string | Date, days = 7): boolean {
+  const t = typeof createdAt === 'string' ? Date.parse(createdAt) : createdAt.getTime();
+  return Date.now() - t < days * 86_400_000;
+}
+
+// Links externos usados no site.
+export const LINKS = {
+  shadcn: 'https://ui.shadcn.com',
+  shadcnstudio: 'https://shadcnstudio.com',
+  claudeCode: 'https://claude.com/claude-code',
+} as const;

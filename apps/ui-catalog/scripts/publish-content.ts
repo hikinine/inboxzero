@@ -78,6 +78,15 @@ async function main() {
     }
   }
   console.log(`criados ${created} · atualizados ${updated} · falhas ${failed}`);
+
+  // Poda: categorias fora da taxonomia e sem itens.
+  const known = new Set(CATEGORIES.map((c) => `${c.kind}:${slugify(c.name)}`));
+  const listed = (await call('list_categories', {})) as { categories: Array<{ kind: string; slug: string; items: number }> };
+  for (const c of listed.categories ?? []) {
+    if (known.has(`${c.kind}:${c.slug}`) || c.items > 0) continue;
+    await call('delete_category', { kind: c.kind, slug: c.slug }).catch((e) => console.warn(`  ! poda ${c.kind}/${c.slug}: ${e instanceof Error ? e.message : e}`));
+    console.log(`  - categoria vazia removida: ${c.kind}/${c.slug}`);
+  }
   if (failed) process.exit(1);
 }
 

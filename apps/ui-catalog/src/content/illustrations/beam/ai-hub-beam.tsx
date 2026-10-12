@@ -47,7 +47,7 @@ export default function AiHubBeam() {
             </g>
           )
         })}
-        <motion.circle cx={CX} cy={CY} r="34" fill="var(--primary)" fillOpacity="0.08" animate={{ r: [34, 46, 34], fillOpacity: [0.08, 0.02, 0.08] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.circle cx={CX} cy={CY} r="34" fill="var(--primary)" fillOpacity="0.08" style={{ transformOrigin: `${CX}px ${CY}px` }} animate={{ scale: [1, 1.35, 1], fillOpacity: [0.08, 0.02, 0.08] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} />
         <circle cx={CX} cy={CY} r="28" fill="var(--card)" stroke="var(--border)" />
         <foreignObject x={CX - 14} y={CY - 14} width="28" height="28">
           <div className="flex size-7 items-center justify-center text-foreground">

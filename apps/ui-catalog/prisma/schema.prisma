@@ -33,6 +33,7 @@ model Category {
   slug        String
   name        String
   description String?
+  group       String?  // slug do grupo (src/lib/groups.ts): marketing | dashboard | ecommerce | datatable | bento | app
   order       Int      @default(100)
   items       Item[]
   createdAt   DateTime @default(now())

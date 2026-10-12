@@ -85,3 +85,13 @@ await fetch('https://ui.codehall.io/api/mcp', {
 
 - [ ] `check_code` ok · [ ] export default sem props · [ ] só tokens do tema · [ ] funciona em claro e escuro
 - [ ] categoria certa (sem duplicar) · [ ] descrição de uma frase · [ ] link do item na resposta
+
+## Taxonomia (grupos e categorias)
+
+O catálogo é organizado como o shadcnstudio: **tipo → grupo → categoria → item**.
+- BLOCK: grupos `marketing` (Hero, Features, Pricing, Depoimentos, Prova social, Portfólio, Equipe, CTA, Logo Cloud, FAQ, Galeria, Blog, Sobre, Contato, Download, Timeline, Processo, Stats, Navbar, Footer, Autenticação, Integrações, Cookies, Chat IA, Comparativo, Erro, Agenda, Videochamada, Lista de espera, Banner), `dashboard` (Dashboard Shell, App Shell, Sidebar, Header de app, Footer de app, Widgets, Estatísticas, Gráficos, Diálogos, Dropdowns, Formulário multi-etapas, Layout de formulário, Configurações de conta, Upload, Onboarding, Estado vazio, Inbox, Kanban, Calendário, Workflow, Multi view, Gantt, Mapa), `ecommerce` (Produto, Quick view, Categoria de produto, Lista de produtos, Carrinho, Oferta, Checkout, Avaliações, Resumo do pedido, Filtros, Mega footer, Gift card, Banner de loja), `datatable` (Datatable, Colunas, Filtros de tabela, Edição, Agrupamento, Exportação, Arrastar e soltar), `bento` (Bento Grid).
+- COMPONENT: **uma categoria por primitivo, com o nome em inglês do shadcn** (Accordion, Alert, Alert Dialog, Avatar, Badge, Breadcrumb, Button, Button Group, Calendar, Card, Carousel, Chart, Checkbox, Code Block, Collapsible, Combobox, Command, Context Menu, Data Table, Date Picker, Dialog, Drawer, Dropdown Menu, Empty, Field, Form, Hover Card, Input, Input Group, Input OTP, Item, Kanban, Kbd, Label, List, Menubar, Navigation Menu, Pagination, Phone Input, Popover, Progress, Radio Group, Rating, Resizable, Scroll Area, Select, Separator, Sheet, Sidebar, Skeleton, Slider, Spinner, Stepper, Switch, Table, Tabs, Textarea, Timeline, Toast, Toggle, Toggle Group, Tooltip, Typography…).
+- PAGE: grupos `marketing` (Landing, Features, Pricing, Sobre, Blog, Contato, FAQ, Integrações, Erro, Changelog) e `app` (Dashboard, Settings, Autenticação, Inbox, Kanban, Onboarding, Checkout).
+- ILLUSTRATION: Beam, Orbit, Chat, Marquee, Card Stack, Text, Ripple, Diversos.
+
+Regras: use `list_categories { kind }` e **reaproveite o nome exato** de uma categoria existente (ela vira card com thumbnail na listagem). Só crie categoria nova se nenhuma servir — e então passe `group` no `upsert_category` (BLOCK: marketing|dashboard|ecommerce|datatable|bento; PAGE: marketing|app) para ela aparecer na seção certa. `delete_category` remove categorias vazias. A fonte da taxonomia no repo é `apps/ui-catalog/src/content/taxonomy.ts`.

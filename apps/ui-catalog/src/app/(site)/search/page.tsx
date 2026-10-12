@@ -6,15 +6,21 @@ import { KINDS } from '@/lib/site';
 import { getFacets } from '@/lib/items';
 import { ItemGrid } from '@/components/site/item-grid';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Buscar' };
+export const metadata: Metadata = { title: 'Explorar' };
 
-type SP = { q?: string; kind?: string; tag?: string; collection?: string };
+type SP = { q?: string; kind?: string; tag?: string; collection?: string; sort?: string; featured?: string };
+
+const pill = (active: boolean) =>
+  cn('rounded-full px-3 py-1 text-xs transition-colors', active ? 'bg-foreground text-background' : 'border text-muted-foreground hover:bg-muted');
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const kind = sp.kind && (Object.values(ItemKind) as string[]).includes(sp.kind) ? (sp.kind as ItemKind) : undefined;
+  const sort = sp.sort === 'new' || sp.sort === 'name' ? sp.sort : undefined;
+  const featured = sp.featured === '1' ? true : undefined;
   const facets = await getFacets(kind);
 
   const link = (patch: Partial<SP>) => {
@@ -28,23 +34,34 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     sp.collection ? { label: `coleção: ${facets.collections.find((c) => c.slug === sp.collection)?.name ?? sp.collection}`, href: link({ collection: undefined }) } : null,
   ].filter(Boolean) as Array<{ label: string; href: string }>;
 
+  const title = sp.q ? `Resultados para “${sp.q}”` : sort === 'new' ? 'Novidades' : featured ? 'Destaques' : 'Explorar';
+
   return (
-    <div className="w-full px-6 lg:px-10 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{sp.q ? `Resultados para “${sp.q}”` : 'Explorar'}</h1>
+    <div className="w-full px-6 py-8 lg:px-10">
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Link href={link({ kind: undefined })} className={!kind ? 'rounded-full bg-foreground px-3 py-1 text-xs text-background' : 'rounded-full border px-3 py-1 text-xs text-muted-foreground hover:bg-muted'}>
+        <Link href={link({ kind: undefined })} className={pill(!kind)}>
           Tudo
         </Link>
         {KINDS.map((k) => (
-          <Link
-            key={k.kind}
-            href={link({ kind: k.kind })}
-            className={kind === k.kind ? 'rounded-full bg-foreground px-3 py-1 text-xs text-background' : 'rounded-full border px-3 py-1 text-xs text-muted-foreground hover:bg-muted'}
-          >
+          <Link key={k.kind} href={link({ kind: k.kind })} className={pill(kind === k.kind)}>
             {k.label}
           </Link>
         ))}
+        <span className="mx-1 h-4 w-px bg-border" />
+        <Link href={link({ sort: undefined, featured: undefined })} className={pill(!sort && !featured)}>
+          Relevância
+        </Link>
+        <Link href={link({ sort: 'new', featured: undefined })} className={pill(sort === 'new')}>
+          Novos
+        </Link>
+        <Link href={link({ featured: '1', sort: undefined })} className={pill(Boolean(featured))}>
+          Hot
+        </Link>
+        <Link href={link({ sort: 'name', featured: undefined })} className={pill(sort === 'name')}>
+          A–Z
+        </Link>
         {active.map((a) => (
           <Badge key={a.label} variant="secondary" render={<Link href={a.href} />}>
             {a.label} <X />
@@ -63,7 +80,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       )}
 
       <div className="mt-6">
-        <ItemGrid filters={{ q: sp.q, kind, tag: sp.tag, collection: sp.collection }} showKind />
+        <ItemGrid filters={{ q: sp.q, kind, tag: sp.tag, collection: sp.collection, sort, featured }} showKind />
       </div>
     </div>
   );

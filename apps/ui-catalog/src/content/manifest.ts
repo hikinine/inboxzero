@@ -1,13 +1,29 @@
-// Manifesto do conteúdo inicial do catálogo (seed local + publish-content para produção).
+// Manifesto do conteúdo do catálogo (seed local + publish-content para produção).
 // Cada entrada aponta para um .tsx em src/content/<kind>/<category>/<slug>.tsx.
 // Os arquivos são código real (type-checked pelo tsc do app) e também o texto salvo no banco.
+// A taxonomia (categorias, grupos, descrições) vive em ./taxonomy.ts; os lotes de itens em ./entries/*.ts.
 import type { ItemKind } from '@prisma/client';
+import { CATEGORIES } from './taxonomy';
+import { ENTRIES as MARKETING_1 } from './entries/marketing-1';
+import { ENTRIES as MARKETING_2 } from './entries/marketing-2';
+import { ENTRIES as MARKETING_3 } from './entries/marketing-3';
+import { ENTRIES as DASHBOARD_1 } from './entries/dashboard-1';
+import { ENTRIES as DASHBOARD_2 } from './entries/dashboard-2';
+import { ENTRIES as ECOMMERCE } from './entries/ecommerce';
+import { ENTRIES as COMPONENTS_1 } from './entries/components-1';
+import { ENTRIES as COMPONENTS_2 } from './entries/components-2';
+import { ENTRIES as COMPONENTS_3 } from './entries/components-3';
+import { ENTRIES as PAGES } from './entries/pages';
+import { ENTRIES as ILLUSTRATIONS } from './entries/illustrations';
+
+export type { CategoryDef } from './taxonomy';
+export { CATEGORIES };
 
 export interface ContentEntry {
   file: string; // relativo a src/content
   name: string;
   kind: ItemKind;
-  category: string;
+  category: string; // nome EXATO de uma categoria em taxonomy.ts (do mesmo kind)
   description: string;
   tags: string[];
   featured?: boolean;
@@ -15,50 +31,8 @@ export interface ContentEntry {
   collection?: string;
 }
 
-export interface CategoryDef {
-  kind: ItemKind;
-  name: string;
-  description: string;
-  order: number;
-}
-
-export const CATEGORIES: CategoryDef[] = [
-  // Blocos (marketing)
-  { kind: 'BLOCK', name: 'Hero', description: 'A primeira dobra: título, promessa e chamada para ação.', order: 10 },
-  { kind: 'BLOCK', name: 'Features', description: 'Grades e bentos para apresentar funcionalidades.', order: 20 },
-  { kind: 'BLOCK', name: 'Pricing', description: 'Planos, comparativos e toggles mensal/anual.', order: 30 },
-  { kind: 'BLOCK', name: 'Depoimentos', description: 'Prova social: citações, notas e logos.', order: 40 },
-  { kind: 'BLOCK', name: 'Stats', description: 'Números que vendem: métricas em destaque.', order: 50 },
-  { kind: 'BLOCK', name: 'FAQ', description: 'Perguntas frequentes em acordeão.', order: 60 },
-  { kind: 'BLOCK', name: 'CTA', description: 'Chamadas finais e faixas de conversão.', order: 70 },
-  { kind: 'BLOCK', name: 'Navbar', description: 'Cabeçalhos e barras de navegação.', order: 80 },
-  { kind: 'BLOCK', name: 'Footer', description: 'Rodapés com colunas de links e newsletter.', order: 90 },
-  { kind: 'BLOCK', name: 'Autenticação', description: 'Login, cadastro e recuperação de senha.', order: 100 },
-  { kind: 'BLOCK', name: 'Logo Cloud', description: 'Faixas de logos de clientes e integrações.', order: 110 },
-  { kind: 'BLOCK', name: 'Processo', description: 'Etapas, timelines e metodologia de trabalho.', order: 65 },
-  // Componentes
-  { kind: 'COMPONENT', name: 'Botões', description: 'Variantes, tamanhos, ícones, estados e grupos.', order: 5 },
-  { kind: 'COMPONENT', name: 'Cards', description: 'Cards de conteúdo, métricas e produto.', order: 10 },
-  { kind: 'COMPONENT', name: 'Formulários', description: 'Campos, grupos e layouts de formulário.', order: 20 },
-  { kind: 'COMPONENT', name: 'Tabelas', description: 'Tabelas de dados com ações e status.', order: 30 },
-  { kind: 'COMPONENT', name: 'Gráficos', description: 'Charts com recharts e tokens do tema.', order: 40 },
-  { kind: 'COMPONENT', name: 'Navegação', description: 'Tabs, breadcrumbs, menus e comandos.', order: 50 },
-  { kind: 'COMPONENT', name: 'Feedback', description: 'Alertas, estados vazios, toasts e diálogos.', order: 60 },
-  // Páginas
-  { kind: 'PAGE', name: 'Dashboard', description: 'Visões gerais com KPIs, gráficos e listas.', order: 10 },
-  { kind: 'PAGE', name: 'Settings', description: 'Páginas de configurações e perfil.', order: 20 },
-  { kind: 'PAGE', name: 'Landing', description: 'Landing pages completas, compostas pelos blocos do catálogo.', order: 5 },
-  // Ilustrações
-  { kind: 'ILLUSTRATION', name: 'Beam', description: 'Feixes de luz percorrendo conectores entre nós — integrações, pipelines e fluxos de IA.', order: 10 },
-  { kind: 'ILLUSTRATION', name: 'Orbit', description: 'Elementos orbitando um núcleo — ecossistemas e integrações.', order: 20 },
-  { kind: 'ILLUSTRATION', name: 'Marquee', description: 'Faixas rolantes de logos, tags e mensagens.', order: 30 },
-  { kind: 'ILLUSTRATION', name: 'Card Stack', description: 'Pilhas de cards em camadas, com entrada e troca animadas.', order: 40 },
-  { kind: 'ILLUSTRATION', name: 'Ripple', description: 'Ondas e pulsos expandindo a partir de um ponto.', order: 50 },
-  { kind: 'ILLUSTRATION', name: 'Chat', description: 'Conversas e bolhas de mensagem animadas.', order: 60 },
-  { kind: 'ILLUSTRATION', name: 'Text', description: 'Animações de texto: typewriter, troca de palavras, revelação.', order: 70 },
-];
-
-export const CONTENT: ContentEntry[] = [
+// ── Lote inicial ──────────────────────────────────────────────────────────────
+const BASE: ContentEntry[] = [
   // ── Ilustrações ──
   { file: 'illustrations/beam/data-flow-beam.tsx', name: 'Data Flow Beam', kind: 'ILLUSTRATION', category: 'Beam', description: 'Feixes de luz percorrem os conectores entre prompt, modelo, API, banco, cache e resposta.', tags: ['beam', 'pipeline', 'ia', 'animado'], featured: true },
   { file: 'illustrations/beam/ai-hub-beam.tsx', name: 'AI Hub Beam', kind: 'ILLUSTRATION', category: 'Beam', description: 'Um núcleo de IA recebe feixes de seis modelos ao redor, com pulso no centro.', tags: ['beam', 'ia', 'hub', 'animado'] },
@@ -86,34 +60,34 @@ export const CONTENT: ContentEntry[] = [
   { file: 'blocks/autenticacao/cadastro-split.tsx', name: 'Cadastro split', kind: 'BLOCK', category: 'Autenticação', description: 'Formulário de cadastro à esquerda e depoimento em painel à direita.', tags: ['cadastro', 'auth', 'form'] },
   { file: 'blocks/logo-cloud/logo-cloud-grid.tsx', name: 'Logo cloud em grade', kind: 'BLOCK', category: 'Logo Cloud', description: 'Oito logos em grade com divisórias finas.', tags: ['logos', 'integracoes'] },
   // ── Componentes ──
-  { file: 'components/cards/card-metrica.tsx', name: 'Card de métrica', kind: 'COMPONENT', category: 'Cards', description: 'Três KPIs com variação e sparkline SVG.', tags: ['card', 'kpi', 'dashboard'], featured: true },
-  { file: 'components/cards/card-produto.tsx', name: 'Card de produto', kind: 'COMPONENT', category: 'Cards', description: 'Imagem, desconto, avaliação, preço e botão de compra.', tags: ['card', 'ecommerce'] },
-  { file: 'components/cards/card-perfil-equipe.tsx', name: 'Cards de equipe', kind: 'COMPONENT', category: 'Cards', description: 'Três membros com avatar, cargo, tags e ações.', tags: ['card', 'equipe', 'perfil'] },
-  { file: 'components/formularios/form-perfil.tsx', name: 'Formulário de perfil', kind: 'COMPONENT', category: 'Formulários', description: 'Inputs, selects nativos, textarea e switch num card com rodapé de ações.', tags: ['form', 'perfil', 'settings'] },
-  { file: 'components/tabelas/tabela-pedidos.tsx', name: 'Tabela de pedidos', kind: 'COMPONENT', category: 'Tabelas', description: 'Seleção, avatar, status em badge e menu de ações por linha.', tags: ['tabela', 'pedidos', 'ecommerce'], featured: true },
-  { file: 'components/graficos/grafico-area.tsx', name: 'Gráfico de área', kind: 'COMPONENT', category: 'Gráficos', description: 'Receita × meta com recharts e tooltip do shadcn.', tags: ['chart', 'area', 'recharts'] },
-  { file: 'components/graficos/grafico-barras.tsx', name: 'Gráfico de barras', kind: 'COMPONENT', category: 'Gráficos', description: 'Leads e vendas por canal, com legenda.', tags: ['chart', 'barras', 'recharts'] },
-  { file: 'components/navegacao/tabs-settings.tsx', name: 'Tabs de configurações', kind: 'COMPONENT', category: 'Navegação', description: 'Três abas em linha com cards de conta, notificações e cobrança.', tags: ['tabs', 'settings'] },
-  { file: 'components/feedback/estado-vazio.tsx', name: 'Estado vazio', kind: 'COMPONENT', category: 'Feedback', description: 'Ícone, título, descrição e duas ações.', tags: ['empty', 'feedback'] },
-  { file: 'components/feedback/alertas-variantes.tsx', name: 'Alertas', kind: 'COMPONENT', category: 'Feedback', description: 'Informativo, sucesso e destrutivo.', tags: ['alert', 'feedback'] },
-  { file: 'components/feedback/dialog-confirmacao.tsx', name: 'Diálogo de confirmação', kind: 'COMPONENT', category: 'Feedback', description: 'Ação destrutiva com confirmação por digitação.', tags: ['dialog', 'confirmacao'] },
+  { file: 'components/cards/card-metrica.tsx', name: 'Card de métrica', kind: 'COMPONENT', category: 'Card', description: 'Três KPIs com variação e sparkline SVG.', tags: ['card', 'kpi', 'dashboard'], featured: true },
+  { file: 'components/cards/card-produto.tsx', name: 'Card de produto', kind: 'COMPONENT', category: 'Card', description: 'Imagem, desconto, avaliação, preço e botão de compra.', tags: ['card', 'ecommerce'] },
+  { file: 'components/cards/card-perfil-equipe.tsx', name: 'Cards de equipe', kind: 'COMPONENT', category: 'Card', description: 'Três membros com avatar, cargo, tags e ações.', tags: ['card', 'equipe', 'perfil'] },
+  { file: 'components/formularios/form-perfil.tsx', name: 'Formulário de perfil', kind: 'COMPONENT', category: 'Form', description: 'Inputs, selects nativos, textarea e switch num card com rodapé de ações.', tags: ['form', 'perfil', 'settings'] },
+  { file: 'components/tabelas/tabela-pedidos.tsx', name: 'Tabela de pedidos', kind: 'COMPONENT', category: 'Table', description: 'Seleção, avatar, status em badge e menu de ações por linha.', tags: ['tabela', 'pedidos', 'ecommerce'], featured: true },
+  { file: 'components/graficos/grafico-area.tsx', name: 'Gráfico de área', kind: 'COMPONENT', category: 'Chart', description: 'Receita × meta com recharts e tooltip do shadcn.', tags: ['chart', 'area', 'recharts'] },
+  { file: 'components/graficos/grafico-barras.tsx', name: 'Gráfico de barras', kind: 'COMPONENT', category: 'Chart', description: 'Leads e vendas por canal, com legenda.', tags: ['chart', 'barras', 'recharts'] },
+  { file: 'components/navegacao/tabs-settings.tsx', name: 'Tabs de configurações', kind: 'COMPONENT', category: 'Tabs', description: 'Três abas em linha com cards de conta, notificações e cobrança.', tags: ['tabs', 'settings'] },
+  { file: 'components/feedback/estado-vazio.tsx', name: 'Estado vazio', kind: 'COMPONENT', category: 'Empty', description: 'Ícone, título, descrição e duas ações.', tags: ['empty', 'feedback'] },
+  { file: 'components/feedback/alertas-variantes.tsx', name: 'Alertas', kind: 'COMPONENT', category: 'Alert', description: 'Informativo, sucesso e destrutivo.', tags: ['alert', 'feedback'] },
+  { file: 'components/feedback/dialog-confirmacao.tsx', name: 'Diálogo de confirmação', kind: 'COMPONENT', category: 'Alert Dialog', description: 'Ação destrutiva com confirmação por digitação.', tags: ['dialog', 'confirmacao'] },
   // ── Páginas ──
   { file: 'pages/dashboard/dashboard-visao-geral.tsx', name: 'Dashboard visão geral', kind: 'PAGE', category: 'Dashboard', description: 'Sidebar, header com busca, KPIs, gráfico de área e tabela de negócios.', tags: ['dashboard', 'crm', 'saas'], featured: true },
   { file: 'pages/settings/settings-perfil.tsx', name: 'Settings de perfil', kind: 'PAGE', category: 'Settings', description: 'Menu lateral e cards de informações, preferências e zona de perigo.', tags: ['settings', 'perfil'] },
   // ── Lote 2 ──
-  { file: 'components/botoes/botoes-variantes.tsx', name: 'Botões: variantes e estados', kind: 'COMPONENT', category: 'Botões', description: 'Todas as variantes e tamanhos, ícones, loading, destrutivo e grupo de botões.', tags: ['button', 'variantes'], featured: true },
-  { file: 'components/formularios/input-group-icones.tsx', name: 'Inputs com addons', kind: 'COMPONENT', category: 'Formulários', description: 'Busca com atalho, prefixo de URL, botão inline, senha com olho e textarea com contador.', tags: ['input', 'form', 'input-group'] },
-  { file: 'components/feedback/badges-status.tsx', name: 'Badges de status', kind: 'COMPONENT', category: 'Feedback', description: 'Status com ponto, com ícone semântico e contadores.', tags: ['badge', 'status'] },
-  { file: 'components/cards/card-progresso-meta.tsx', name: 'Card de metas com progresso', kind: 'COMPONENT', category: 'Cards', description: 'Três metas com barra, rótulo e valor; avatares do time no rodapé.', tags: ['card', 'progress', 'metas'] },
-  { file: 'components/navegacao/command-palette.tsx', name: 'Command palette', kind: 'COMPONENT', category: 'Navegação', description: 'Paleta de comandos (cmdk) com grupos, ícones e atalhos.', tags: ['command', 'cmdk', 'busca'], featured: true },
-  { file: 'components/navegacao/breadcrumb-paginacao.tsx', name: 'Breadcrumb e paginação', kind: 'COMPONENT', category: 'Navegação', description: 'Trilha com reticências e paginação com página ativa.', tags: ['breadcrumb', 'pagination'] },
-  { file: 'components/cards/skeleton-loading.tsx', name: 'Skeleton de carregamento', kind: 'COMPONENT', category: 'Cards', description: 'Esqueleto de card e de lista com avatares.', tags: ['skeleton', 'loading'] },
-  { file: 'components/formularios/calendario-agendamento.tsx', name: 'Calendário de agendamento', kind: 'COMPONENT', category: 'Formulários', description: 'Calendário com horários disponíveis e confirmação.', tags: ['calendar', 'agendamento', 'form'] },
-  { file: 'components/cards/timeline-atividades.tsx', name: 'Timeline de atividades', kind: 'COMPONENT', category: 'Cards', description: 'Linha do tempo vertical com ícone por tipo de evento e avatar.', tags: ['timeline', 'atividades', 'crm'] },
-  { file: 'components/navegacao/carousel-depoimentos.tsx', name: 'Carousel de depoimentos', kind: 'COMPONENT', category: 'Navegação', description: 'Carrossel (embla) de cards de depoimento com setas.', tags: ['carousel', 'depoimentos'] },
-  { file: 'components/formularios/slider-switch-config.tsx', name: 'Sliders e switches de configuração', kind: 'COMPONENT', category: 'Formulários', description: 'Limites com slider e permissões com switch num card de configuração de IA.', tags: ['slider', 'switch', 'settings'] },
+  { file: 'components/botoes/botoes-variantes.tsx', name: 'Botões: variantes e estados', kind: 'COMPONENT', category: 'Button', description: 'Todas as variantes e tamanhos, ícones, loading, destrutivo e grupo de botões.', tags: ['button', 'variantes'], featured: true },
+  { file: 'components/formularios/input-group-icones.tsx', name: 'Inputs com addons', kind: 'COMPONENT', category: 'Input Group', description: 'Busca com atalho, prefixo de URL, botão inline, senha com olho e textarea com contador.', tags: ['input', 'form', 'input-group'] },
+  { file: 'components/feedback/badges-status.tsx', name: 'Badges de status', kind: 'COMPONENT', category: 'Badge', description: 'Status com ponto, com ícone semântico e contadores.', tags: ['badge', 'status'] },
+  { file: 'components/cards/card-progresso-meta.tsx', name: 'Card de metas com progresso', kind: 'COMPONENT', category: 'Card', description: 'Três metas com barra, rótulo e valor; avatares do time no rodapé.', tags: ['card', 'progress', 'metas'] },
+  { file: 'components/navegacao/command-palette.tsx', name: 'Command palette', kind: 'COMPONENT', category: 'Command', description: 'Paleta de comandos (cmdk) com grupos, ícones e atalhos.', tags: ['command', 'cmdk', 'busca'], featured: true },
+  { file: 'components/navegacao/breadcrumb-paginacao.tsx', name: 'Breadcrumb e paginação', kind: 'COMPONENT', category: 'Breadcrumb', description: 'Trilha com reticências e paginação com página ativa.', tags: ['breadcrumb', 'pagination'] },
+  { file: 'components/cards/skeleton-loading.tsx', name: 'Skeleton de carregamento', kind: 'COMPONENT', category: 'Skeleton', description: 'Esqueleto de card e de lista com avatares.', tags: ['skeleton', 'loading'] },
+  { file: 'components/formularios/calendario-agendamento.tsx', name: 'Calendário de agendamento', kind: 'COMPONENT', category: 'Calendar', description: 'Calendário com horários disponíveis e confirmação.', tags: ['calendar', 'agendamento', 'form'] },
+  { file: 'components/cards/timeline-atividades.tsx', name: 'Timeline de atividades', kind: 'COMPONENT', category: 'Timeline', description: 'Linha do tempo vertical com ícone por tipo de evento e avatar.', tags: ['timeline', 'atividades', 'crm'] },
+  { file: 'components/navegacao/carousel-depoimentos.tsx', name: 'Carousel de depoimentos', kind: 'COMPONENT', category: 'Carousel', description: 'Carrossel (embla) de cards de depoimento com setas.', tags: ['carousel', 'depoimentos'] },
+  { file: 'components/formularios/slider-switch-config.tsx', name: 'Sliders e switches de configuração', kind: 'COMPONENT', category: 'Slider', description: 'Limites com slider e permissões com switch num card de configuração de IA.', tags: ['slider', 'switch', 'settings'] },
   { file: 'blocks/depoimentos/depoimento-destaque.tsx', name: 'Depoimento em destaque', kind: 'BLOCK', category: 'Depoimentos', description: 'Uma citação grande centralizada com autor.', tags: ['depoimento', 'prova-social'] },
-  { file: 'blocks/features/como-funciona-passos.tsx', name: 'Como funciona em passos', kind: 'BLOCK', category: 'Features', description: 'Três passos numerados ligados por uma linha.', tags: ['passos', 'como-funciona'] },
+  { file: 'blocks/features/como-funciona-passos.tsx', name: 'Como funciona em passos', kind: 'BLOCK', category: 'Processo', description: 'Três passos numerados ligados por uma linha.', tags: ['passos', 'como-funciona'] },
   { file: 'blocks/pricing/tabela-comparativa.tsx', name: 'Tabela comparativa de planos', kind: 'BLOCK', category: 'Pricing', description: 'Recursos por plano com checks e coluna em destaque.', tags: ['pricing', 'tabela', 'comparativo'] },
   { file: 'illustrations/orbit/avatar-orbit.tsx', name: 'Avatar Orbit', kind: 'ILLUSTRATION', category: 'Orbit', description: 'Contatos orbitam um centro de conversas em dois anéis.', tags: ['orbit', 'avatares', 'animado'] },
   { file: 'illustrations/beam/design-to-deploy-beam.tsx', name: 'Design to Deploy Beam', kind: 'ILLUSTRATION', category: 'Beam', description: 'Pipeline Figma → Next.js → Claude → Deploy com feixes entre as etapas.', tags: ['beam', 'pipeline', 'deploy', 'animado'] },
@@ -132,4 +106,19 @@ export const CONTENT: ContentEntry[] = [
   { file: 'blocks/cta/codehall-cta.tsx', name: 'Codehall · CTA de contato', kind: 'BLOCK', category: 'CTA', collection: 'Codehall', description: 'Painel no acento com corte diagonal, botão sólido com ícone e três garantias.', tags: ['codehall', 'cta', 'contato'] },
   { file: 'blocks/footer/codehall-footer.tsx', name: 'Codehall · Footer', kind: 'BLOCK', category: 'Footer', collection: 'Codehall', description: 'Tagline, cinco links e copyright numa linha.', tags: ['codehall', 'footer'] },
   { file: 'pages/landing/codehall-landing.tsx', name: 'Codehall · Landing completa', kind: 'PAGE', category: 'Landing', collection: 'Codehall', description: 'A landing de codehall.io inteira, composta pelos onze blocos da coleção.', tags: ['codehall', 'landing', 'software-house'], featured: true, previewHeight: 900 },
+];
+
+export const CONTENT: ContentEntry[] = [
+  ...BASE,
+  ...MARKETING_1,
+  ...MARKETING_2,
+  ...MARKETING_3,
+  ...DASHBOARD_1,
+  ...DASHBOARD_2,
+  ...ECOMMERCE,
+  ...COMPONENTS_1,
+  ...COMPONENTS_2,
+  ...COMPONENTS_3,
+  ...PAGES,
+  ...ILLUSTRATIONS,
 ];

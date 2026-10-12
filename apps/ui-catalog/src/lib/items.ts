@@ -1,5 +1,12 @@
 import { ItemKind, ItemStatus, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { GROUPS, UNGROUPED, type GroupMeta } from '@/lib/groups';
+
+// Item "novo" = publicado há menos de NEW_DAYS dias (badge "Novo" nos cards e nas categorias).
+export const NEW_DAYS = 7;
+export function newSince(): Date {
+  return new Date(Date.now() - NEW_DAYS * 86_400_000);
+}
 
 export interface ItemFilters {
   q?: string;
@@ -101,17 +108,19 @@ export function toMeta(s: ItemRow): ItemMeta {
 // Paginação por cursor (infinite scroll). Ordena por (featured desc, createdAt desc, id desc); cursor = id.
 export async function listItems(
   f: ItemFilters,
-  opts: { cursor?: string | null; limit?: number; withTotal?: boolean } = {},
+  opts: { cursor?: string | null; limit?: number; withTotal?: boolean; sort?: 'default' | 'new' | 'name' } = {},
 ): Promise<{ items: ItemMeta[]; nextCursor: string | null; total?: number }> {
   const limit = Math.min(Math.max(opts.limit ?? 24, 1), 100);
   const where = buildWhere(f);
+  const orderBy: Prisma.ItemOrderByWithRelationInput[] =
+    opts.sort === 'new' ? [{ createdAt: 'desc' }, { id: 'desc' }] : opts.sort === 'name' ? [{ name: 'asc' }, { id: 'desc' }] : [{ featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }];
 
   const [rows, total] = await Promise.all([
     prisma.item.findMany({
       where,
       take: limit + 1, // +1 sentinela para saber se há próxima página
       ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      orderBy,
       select: metaSelect,
     }),
     opts.withTotal ? prisma.item.count({ where }) : Promise.resolve(undefined),
@@ -132,6 +141,7 @@ export interface Facet {
   count: number;
   description?: string | null;
   kind?: ItemKind;
+  group?: string | null;
 }
 export interface Facets {
   categories: Facet[];
@@ -163,6 +173,7 @@ export async function getFacets(kind?: ItemKind, status: ItemStatus = 'PUBLISHED
       name: c.name,
       description: c.description,
       kind: c.kind,
+      group: c.group,
       count: c._count.items,
     })),
     collections: collections.map((c) => ({ slug: c.slug, name: c.name, description: c.description, count: c._count.items })),
@@ -197,4 +208,117 @@ export async function findItem(idOrSlug: string) {
     where: { OR: [{ id: idOrSlug }, { slug: idOrSlug }] },
     include: { category: true, collection: true, tags: { include: { tag: true } } },
   });
+}
+
+// ── Cards de categoria (listagens /blocks, /components… estilo shadcnstudio) ─────────────────
+export interface CategoryCardData {
+  slug: string;
+  name: string;
+  description: string | null;
+  group: string | null;
+  order: number;
+  count: number;
+  cover: { slug: string; kind: ItemKind } | null; // item usado como thumbnail (destaque primeiro)
+  hasNew: boolean;
+  hasFeatured: boolean;
+}
+
+export async function getCategoryCards(kind: ItemKind): Promise<CategoryCardData[]> {
+  const since = newSince();
+  const [cats, newest, featured] = await Promise.all([
+    prisma.category.findMany({
+      where: { kind },
+      orderBy: [{ order: 'asc' }, { name: 'asc' }],
+      include: {
+        _count: { select: { items: { where: { status: 'PUBLISHED' } } } },
+        items: { where: { status: 'PUBLISHED' }, orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }], take: 1, select: { slug: true, kind: true } },
+      },
+    }),
+    prisma.item.groupBy({ by: ['categoryId'], where: { kind, status: 'PUBLISHED', createdAt: { gte: since } }, _count: { _all: true } }),
+    prisma.item.groupBy({ by: ['categoryId'], where: { kind, status: 'PUBLISHED', featured: true }, _count: { _all: true } }),
+  ]);
+  const newSet = new Set(newest.map((n) => n.categoryId));
+  const featSet = new Set(featured.map((f) => f.categoryId));
+  return cats
+    .filter((c) => c._count.items > 0)
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      description: c.description,
+      group: c.group,
+      order: c.order,
+      count: c._count.items,
+      cover: c.items[0] ?? null,
+      hasNew: newSet.has(c.id),
+      hasFeatured: featSet.has(c.id),
+    }));
+}
+
+export interface CategoryGroup {
+  group: GroupMeta;
+  cards: CategoryCardData[];
+  count: number;
+}
+
+// Agrupa os cards pelos grupos do tipo (ordem de GROUPS). Sem grupos no tipo → um único grupo "todos".
+export function groupCategoryCards(kind: ItemKind, cards: CategoryCardData[]): CategoryGroup[] {
+  const groups = GROUPS[kind];
+  if (!groups.length) return cards.length ? [{ group: UNGROUPED, cards, count: cards.reduce((a, c) => a + c.count, 0) }] : [];
+  const out: CategoryGroup[] = [];
+  for (const g of groups) {
+    const gc = cards.filter((c) => c.group === g.slug);
+    if (gc.length) out.push({ group: g, cards: gc, count: gc.reduce((a, c) => a + c.count, 0) });
+  }
+  const rest = cards.filter((c) => !groups.some((g) => g.slug === c.group));
+  if (rest.length) out.push({ group: { ...UNGROUPED, name: 'Outros' }, cards: rest, count: rest.reduce((a, c) => a + c.count, 0) });
+  return out;
+}
+
+// Quantos itens publicados nos últimos NEW_DAYS dias (barra de anúncio, badges).
+export async function countNewItems(): Promise<number> {
+  return prisma.item.count({ where: { status: 'PUBLISHED', createdAt: { gte: newSince() } } });
+}
+
+// ── Coleções como "templates" (cards com capa, contagem por tipo e item de preview) ─────────────
+export interface CollectionCardData {
+  slug: string;
+  name: string;
+  description: string | null;
+  count: number;
+  byKind: Record<ItemKind, number>;
+  cover: { slug: string; kind: ItemKind } | null; // página em destaque > página > bloco em destaque > qualquer
+  updatedAt: string;
+  hasNew: boolean;
+}
+
+export async function getCollectionCards(): Promise<CollectionCardData[]> {
+  const since = newSince();
+  const rows = await prisma.collection.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      items: {
+        where: { status: 'PUBLISHED' },
+        orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+        select: { slug: true, kind: true, featured: true, createdAt: true, updatedAt: true },
+      },
+    },
+  });
+  return rows
+    .filter((c) => c.items.length > 0)
+    .map((c) => {
+      const byKind: Record<ItemKind, number> = { BLOCK: 0, COMPONENT: 0, ILLUSTRATION: 0, PAGE: 0 };
+      for (const it of c.items) byKind[it.kind]++;
+      const cover = c.items.find((i) => i.kind === 'PAGE') ?? c.items.find((i) => i.kind === 'BLOCK') ?? c.items[0] ?? null;
+      const updatedAt = c.items.reduce((m, i) => (i.updatedAt > m ? i.updatedAt : m), c.updatedAt);
+      return {
+        slug: c.slug,
+        name: c.name,
+        description: c.description,
+        count: c.items.length,
+        byKind,
+        cover: cover ? { slug: cover.slug, kind: cover.kind } : null,
+        updatedAt: updatedAt.toISOString(),
+        hasNew: c.items.some((i) => i.createdAt >= since),
+      };
+    });
 }

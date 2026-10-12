@@ -110,7 +110,7 @@ export const TOOLS = [
   },
   {
     name: 'upsert_category',
-    description: 'Cria ou atualiza uma categoria (nome, descrição exibida na seção, ordem). Útil para dar descrição às seções do catálogo.',
+    description: 'Cria ou atualiza uma categoria (nome, descrição exibida na seção, grupo, ordem). Útil para dar descrição às seções do catálogo.',
     inputSchema: {
       type: 'object',
       required: ['kind', 'name'],
@@ -118,7 +118,20 @@ export const TOOLS = [
         kind: { type: 'string', enum: ['COMPONENT', 'BLOCK', 'PAGE', 'ILLUSTRATION'] },
         name: { type: 'string' },
         description: { type: 'string' },
+        group: { type: 'string', description: 'Slug do grupo da categoria. BLOCK: marketing | dashboard | ecommerce | datatable | bento. PAGE: marketing | app. Vazio desagrupa.' },
         order: { type: 'number', description: 'Ordem de exibição (menor primeiro, default 100)' },
+      },
+    },
+  },
+  {
+    name: 'delete_category',
+    description: 'Remove uma categoria VAZIA (sem itens) pelo tipo e slug/nome. Recusa se houver itens.',
+    inputSchema: {
+      type: 'object',
+      required: ['kind', 'slug'],
+      properties: {
+        kind: { type: 'string', enum: ['COMPONENT', 'BLOCK', 'PAGE', 'ILLUSTRATION'] },
+        slug: { type: 'string', description: 'Slug (ou nome) da categoria' },
       },
     },
   },
@@ -300,16 +313,34 @@ export async function deleteItemById(idOrSlug: string) {
   return { id: existing.id, slug: existing.slug };
 }
 
-export async function upsertCategory(input: { kind: ItemKind; name: string; description?: string | null; order?: number }) {
+export async function upsertCategory(input: { kind: ItemKind; name: string; description?: string | null; group?: string | null; order?: number }) {
   const slug = slugify(input.name);
   const update: Prisma.CategoryUpdateInput = { name: input.name.trim() };
   if (input.description !== undefined) update.description = input.description?.trim() || null;
+  if (input.group !== undefined) update.group = input.group?.trim() || null;
   if (input.order !== undefined) update.order = input.order;
   return prisma.category.upsert({
     where: { kind_slug: { kind: input.kind, slug } },
-    create: { kind: input.kind, slug, name: input.name.trim(), description: input.description?.trim() || null, order: input.order ?? 100 },
+    create: {
+      kind: input.kind,
+      slug,
+      name: input.name.trim(),
+      description: input.description?.trim() || null,
+      group: input.group?.trim() || null,
+      order: input.order ?? 100,
+    },
     update,
   });
+}
+
+// Remove uma categoria sem itens (pelo slug ou nome). Usado pelo seed/publish para podar a taxonomia antiga.
+export async function deleteEmptyCategory(kind: ItemKind, slugOrName: string) {
+  const slug = slugify(slugOrName);
+  const cat = await prisma.category.findUnique({ where: { kind_slug: { kind, slug } }, include: { _count: { select: { items: true } } } });
+  if (!cat) throw new Error('Categoria não encontrada');
+  if (cat._count.items > 0) throw new Error(`Categoria "${cat.name}" tem ${cat._count.items} item(ns) — mova-os antes de remover`);
+  await prisma.category.delete({ where: { id: cat.id } });
+  return { kind, slug, name: cat.name };
 }
 
 // ── Tools ────────────────────────────────────────────────────────────────────
@@ -418,7 +449,7 @@ async function checkCodeTool(args: unknown): Promise<ToolResult> {
 }
 
 async function listSupportedModules(): Promise<ToolResult> {
-  const cats = await prisma.category.findMany({ orderBy: [{ kind: 'asc' }, { order: 'asc' }], select: { kind: true, slug: true, name: true } });
+  const cats = await prisma.category.findMany({ orderBy: [{ kind: 'asc' }, { order: 'asc' }], select: { kind: true, slug: true, name: true, group: true } });
   return ok({
     ui: UI_MODULE_NAMES,
     libs: LIB_MODULE_NAMES,
@@ -440,17 +471,27 @@ async function listCategories(args: unknown): Promise<ToolResult> {
   });
   return ok({
     count: rows.length,
-    categories: rows.map((c) => ({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, order: c.order, items: c._count.items })),
+    categories: rows.map((c) => ({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, group: c.group, order: c.order, items: c._count.items })),
   });
 }
 
 async function upsertCategoryTool(args: unknown): Promise<ToolResult> {
   const p = z
-    .object({ kind: kindSchema, name: z.string().min(1), description: z.string().optional(), order: z.number().int().optional() })
+    .object({ kind: kindSchema, name: z.string().min(1), description: z.string().optional(), group: z.string().optional(), order: z.number().int().optional() })
     .safeParse(args ?? {});
   if (!p.success) return fail(`Entrada inválida: ${p.error.message}`);
   const c = await upsertCategory(p.data);
-  return ok({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, order: c.order });
+  return ok({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, group: c.group, order: c.order });
+}
+
+async function deleteCategoryTool(args: unknown): Promise<ToolResult> {
+  const p = z.object({ kind: kindSchema, slug: z.string().min(1) }).safeParse(args ?? {});
+  if (!p.success) return fail(`Entrada inválida: ${p.error.message}`);
+  try {
+    return ok({ deleted: true, ...(await deleteEmptyCategory(p.data.kind, p.data.slug)) });
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : 'Falha ao remover categoria');
+  }
 }
 
 async function listCollections(): Promise<ToolResult> {
@@ -484,6 +525,8 @@ export async function callTool(name: string, args: unknown): Promise<ToolResult>
       return listCategories(args);
     case 'upsert_category':
       return upsertCategoryTool(args);
+    case 'delete_category':
+      return deleteCategoryTool(args);
     case 'list_collections':
       return listCollections();
     case 'list_tags':

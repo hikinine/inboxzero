@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
       cursor: sp.get('cursor') ?? undefined,
       limit: sp.get('limit') ? Number(sp.get('limit')) : undefined,
       withTotal: sp.get('withTotal') === '1',
+      sort: inEnum(['default', 'new', 'name'] as const, sp.get('sort')),
     },
   );
   return NextResponse.json(result);

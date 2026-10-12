@@ -64,3 +64,7 @@ Na UI do catálogo dá para selecionar vários e **Copiar prompt** (lista slugs 
 
 Diga ao usuário e ofereça **criar** — aí use `ui-catalog-create`. Não force um item que não
 comunica o que ele pediu.
+
+## Como o catálogo é organizado
+
+Tipo → grupo → categoria → item, como no shadcnstudio. Blocos têm grupos `marketing`, `dashboard` (Dashboard & App), `ecommerce`, `datatable` e `bento`; páginas têm `marketing` e `app`; componentes são uma categoria por primitivo (nome em inglês: Button, Input, Dialog, Table…); ilustrações por família (Beam, Orbit, Chat, Marquee, Card Stack, Text, Ripple, Diversos). `list_categories` devolve `group` e a contagem; as páginas públicas são `/<blocks|components|pages|illustrations>/<slug-da-categoria>` (lista todos os itens da categoria com preview e código) e `/item/<slug>`. Itens com `featured: true` aparecem como "Hot"; publicados há menos de 7 dias, como "Novo".

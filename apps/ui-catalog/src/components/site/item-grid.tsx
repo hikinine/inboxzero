@@ -19,6 +19,7 @@ export interface GridFilters {
   ids?: string[];
   featured?: boolean;
   status?: string;
+  sort?: 'default' | 'new' | 'name';
 }
 
 export function ItemGrid({
@@ -59,6 +60,7 @@ export function ItemGrid({
       if (filters.ids?.length) sp.set('ids', filters.ids.join(','));
       if (filters.featured !== undefined) sp.set('featured', filters.featured ? '1' : '0');
       if (filters.status) sp.set('status', filters.status);
+      if (filters.sort) sp.set('sort', filters.sort);
       sp.set('limit', String(pageSize));
       if (c) sp.set('cursor', c);
       if (first) sp.set('withTotal', '1');

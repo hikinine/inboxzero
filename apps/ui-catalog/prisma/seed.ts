@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { CATEGORIES, CONTENT } from '../src/content/manifest';
-import { createItem, updateItemById, upsertCategory } from '../src/lib/mcp/tools';
+import { createItem, deleteEmptyCategory, updateItemById, upsertCategory } from '../src/lib/mcp/tools';
 import { slugify } from '../src/lib/slug';
 
 const prisma = new PrismaClient();
@@ -39,6 +39,17 @@ async function main() {
     }
   }
   console.log(`seed: ${created} itens criados, ${updated} atualizados`);
+
+  // Poda: categorias que não estão na taxonomia e ficaram sem itens (ex.: renomeadas).
+  const known = new Set(CATEGORIES.map((c) => `${c.kind}:${slugify(c.name)}`));
+  const all = await prisma.category.findMany({ include: { _count: { select: { items: true } } } });
+  let pruned = 0;
+  for (const c of all) {
+    if (known.has(`${c.kind}:${c.slug}`) || c._count.items > 0) continue;
+    await deleteEmptyCategory(c.kind, c.slug);
+    pruned++;
+  }
+  if (pruned) console.log(`seed: ${pruned} categoria(s) vazia(s) removida(s)`);
 }
 
 main()

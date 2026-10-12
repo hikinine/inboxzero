@@ -103,6 +103,7 @@ export function PreviewDetail({
   minHeight,
   onError,
   className,
+  lazy = false,
 }: {
   slug: string;
   kind: ItemKind;
@@ -112,15 +113,35 @@ export function PreviewDetail({
   minHeight?: number | null;
   onError?: (message: string) => void;
   className?: string;
+  lazy?: boolean; // só monta o iframe quando entra na viewport (listas com vários previews)
 }) {
   const fit = kind === 'BLOCK' || kind === 'PAGE' ? 'full' : 'center';
   const theme = useSiteTheme(override);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const base = minHeight ?? (fit === 'center' ? 420 : 560);
   const [height, setHeight] = useState<number>(base);
   const [ready, setReady] = useState(false);
+  const [visible, setVisible] = useState(!lazy);
   const [initialTheme] = useState(theme);
   useThemeSync(iframeRef, theme);
+
+  useEffect(() => {
+    if (!lazy || visible) return;
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '600px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [lazy, visible]);
 
   useEffect(() => {
     const on = (e: MessageEvent) => {
@@ -134,9 +155,11 @@ export function PreviewDetail({
   }, [fit, base, onError]);
 
   return (
-    <div className={cn('w-full overflow-x-auto rounded-xl border bg-muted/30 p-3', className)}>
+    <div ref={rootRef} className={cn('w-full overflow-x-auto rounded-xl border bg-muted/30 p-3', className)}>
       <div className="relative mx-auto transition-[width] duration-300" style={{ width: viewport ? `${viewport}px` : '100%', maxWidth: '100%' }}>
         {!ready && <Skeleton className="absolute inset-0" />}
+        {!visible && <div style={{ height: fit === 'center' ? base : height }} />}
+        {visible && (
         <iframe
           key={reloadKey}
           ref={iframeRef}
@@ -146,6 +169,7 @@ export function PreviewDetail({
           className="block w-full rounded-lg border-0 bg-background shadow-sm"
           style={{ height: fit === 'center' ? base : height, transition: 'height 150ms ease' }}
         />
+        )}
       </div>
     </div>
   );
