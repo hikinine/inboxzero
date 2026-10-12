@@ -40,7 +40,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="relative overflow-hidden border-b">
         <div className="bg-grid absolute inset-0 -z-10" />
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 pb-16 pt-20 lg:grid-cols-2 lg:items-center lg:pt-24">
+        <div className="grid w-full gap-10 px-6 lg:px-10 pb-16 pt-20 lg:grid-cols-2 lg:items-center lg:pt-24">
           <div>
             <Badge variant="secondary" className="mb-5 gap-2">
               <span className="size-1.5 rounded-full bg-brand" /> shadcn/ui · Tailwind v4 · Base UI · motion
@@ -71,13 +71,13 @@ export default async function HomePage() {
             <DataFlowBeam />
           </div>
         </div>
-        <div className="mx-auto w-full max-w-7xl px-6 pb-12">
+        <div className="w-full px-6 lg:px-10 pb-12">
           <Marquee items={marqueeItems} />
         </div>
       </section>
 
       {/* Números */}
-      <section className="mx-auto w-full max-w-7xl px-6 py-16">
+      <section className="w-full px-6 lg:px-10 py-16">
         <Stats
           items={[
             { value: stats.total, label: 'itens publicados' },
@@ -90,7 +90,7 @@ export default async function HomePage() {
 
       {/* Features */}
       <section className="border-t">
-        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+        <div className="w-full px-6 lg:px-10 py-20">
           <SectionHead eyebrow="por que" title="Um catálogo, não uma pasta de prints." text="O shadcnstudio mostrou o formato; aqui ele é seu: privado, alimentado por você e pelo Claude, com o código real como fonte da verdade." />
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f) => (
@@ -106,7 +106,7 @@ export default async function HomePage() {
 
       {/* Showcase */}
       <section className="border-t">
-        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+        <div className="w-full px-6 lg:px-10 py-20">
           <SectionHead eyebrow="o acervo" title="Abas por tipo, seções por categoria." text="Blocos de marketing, telas de app, componentes avulsos e ilustrações — cada um com sua organização, todos com preview ao vivo." />
           <div className="mt-10">
             <ShowcaseTabs byKind={byKind} />
@@ -116,7 +116,7 @@ export default async function HomePage() {
 
       {/* Como funciona */}
       <section className="border-t">
-        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+        <div className="w-full px-6 lg:px-10 py-20">
           <SectionHead eyebrow="como funciona" title="Peça. Veja. Instale." />
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
             <Step n="01" Icon={Sparkles} title="Peça ao Claude" text="“Cria um bloco de pricing com três planos e toggle mensal/anual.” A skill ui-catalog-create escreve, valida (check_code) e publica (add_item)." />
@@ -146,7 +146,7 @@ export default async function HomePage() {
 
       {/* Ilustrações */}
       <section className="border-t">
-        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+        <div className="w-full px-6 lg:px-10 py-20">
           <SectionHead eyebrow="ilustrações" title="Animadas, temáveis, instaláveis." text="Não são PNGs nem SVGs soltos: são componentes React com motion. Herdam suas cores e seu raio, animam ao entrar na tela e em loop." />
           <div className="mt-10 grid gap-4 lg:grid-cols-[1.4fr_1fr] lg:items-center">
             <div className="flex items-center justify-center rounded-xl border bg-card p-8">
@@ -166,7 +166,7 @@ export default async function HomePage() {
 
       {/* MCP */}
       <section id="mcp" className="scroll-mt-20 border-t">
-        <div className="mx-auto w-full max-w-7xl px-6 py-20">
+        <div className="w-full px-6 lg:px-10 py-20">
           <SectionHead eyebrow="mcp · claude code · claude desktop · codex · cursor · windsurf · copilot · gemini" title="Instale o MCP em dois minutos." text="Escolha seu cliente, cole a configuração, exporte o token e reinicie. O Claude (ou o Codex, Cursor, Windsurf, Copilot, Gemini) passa a buscar, criar e validar itens deste catálogo direto da conversa." />
           <div className="mt-10">
             <McpSetup />
@@ -176,7 +176,7 @@ export default async function HomePage() {
 
       {/* FAQ */}
       <section className="border-t">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[1fr_2fr]">
+        <div className="grid w-full gap-10 px-6 lg:px-10 py-20 lg:grid-cols-[1fr_2fr]">
           <SectionHead eyebrow="dúvidas" title="Perguntas frequentes" />
           <Faq />
         </div>
@@ -184,7 +184,7 @@ export default async function HomePage() {
 
       {/* CTA */}
       <section className="border-t">
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-6 px-6 py-24 text-center">
+        <div className="flex w-full flex-col items-center gap-6 px-6 lg:px-10 py-24 text-center">
           <h2 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">Pare de reconstruir o mesmo hero.</h2>
           <p className="max-w-xl text-muted-foreground">Publique uma vez, encontre sempre, instale em segundos.</p>
           <div className="flex flex-wrap justify-center gap-3">

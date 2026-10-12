@@ -27,7 +27,7 @@ export function ShowcaseTabs({ byKind }: { byKind: Record<ItemKind, ItemMeta[]> 
         <TabsContent key={k.kind} value={k.kind} className="pt-6">
           {byKind[k.kind]?.length ? (
             <>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5">
                 {byKind[k.kind].map((it) => (
                   <ItemCard key={it.id} item={it} />
                 ))}
