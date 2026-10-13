@@ -5,40 +5,31 @@ import {
   Bot,
   Code2,
   Copy,
-  FileCode2,
-  Layers,
-  MonitorSmartphone,
-  Moon,
   Palette,
   Plus,
   Sparkles,
-  Terminal,
-  Wand2,
   Zap,
 } from 'lucide-react';
 import type { ItemKind } from '@prisma/client';
 import { GROUPS } from '@/lib/groups';
 import { getCategoryCards, getStats, listItems, type CategoryCardData } from '@/lib/items';
-import { KINDS, LINKS, SITE_URL } from '@/lib/site';
+import { KINDS, LINKS } from '@/lib/site';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
-import { CodeBlock } from '@/components/site/code-block';
 import { CategoryCard } from '@/components/site/category-card';
 import { PreviewCard } from '@/components/site/preview-frame';
 import { ClientOnly } from '@/components/site/client-only';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Marquee } from '@/components/landing/marquee';
 import { Stats } from '@/components/landing/stats';
-import { InstallTabs } from '@/components/landing/install-tabs';
 import { Faq } from '@/components/landing/faq';
 import { McpSetup } from '@/components/landing/mcp-setup';
+import { Essentials } from '@/components/landing/essentials';
 import DataFlowBeam from '@/content/illustrations/beam/data-flow-beam';
-import IntegrationsOrbit from '@/content/illustrations/orbit/integrations-orbit';
 
 export const dynamic = 'force-dynamic';
 
-const STACKS = ['Next.js', 'Vite', 'Remix', 'Astro', 'TanStack', 'Expo', 'Laravel + Inertia', 'Gatsby'];
 const EDITORS = ['Claude Code', 'Claude Desktop', 'Cursor', 'Windsurf', 'VS Code', 'Codex', 'Gemini CLI'];
 
 const PROMPTS = [
@@ -64,7 +55,6 @@ export default async function HomePage() {
   ]);
   const marqueeItems =
     featured.items.length >= 4 ? featured.items : (await listItems({ status: 'PUBLISHED' }, { limit: 12 })).items;
-  const exampleSlug = featured.items.find((i) => i.kind === 'BLOCK')?.slug ?? 'hero-centralizado';
   const byKind = stats.byKind;
 
   return (
@@ -117,60 +107,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Tudo num só lugar ────────────────────────────────────────────── */}
-      <section className="border-t">
-        <div className="mx-auto w-full max-w-screen-2xl px-6 lg:px-10 py-20">
-          <SectionHead eyebrow="Essenciais" title="Tudo o que você precisa num só lugar." text="Blocos, componentes, páginas e ilustrações feitos com os primitivos do shadcn — temáveis, acessíveis e instaláveis em qualquer stack React." center />
-          <div className="mt-12 grid grid-cols-1 gap-4 lg:grid-cols-3 [&>*]:min-w-0">
-            <FeatureCard icon={Layers} title="Funciona com qualquer stack React" text="Next.js, Vite, Remix, Astro… o item é um arquivo TSX que usa só @/components/ui/* e Tailwind v4.">
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {STACKS.map((s) => (
-                  <Badge key={s} variant="outline">
-                    {s}
-                  </Badge>
-                ))}
-              </div>
-            </FeatureCard>
-            <FeatureCard icon={FileCode2} title="O código é seu" text="Sem lock-in: copie, instale pelo CLI ou baixe um .zip. O arquivo entra no seu projeto e você edita à vontade.">
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                {[
-                  ['shadcn/ui', 'primitivos'],
-                  ['Tailwind v4', 'estilo'],
-                  ['Base UI', 'acessibilidade'],
-                ].map(([a, b]) => (
-                  <div key={a} className="rounded-lg border bg-muted/30 p-2">
-                    <div className="font-medium text-foreground">{a}</div>
-                    <div className="text-muted-foreground">{b}</div>
-                  </div>
-                ))}
-              </div>
-            </FeatureCard>
-            <FeatureCard icon={Wand2} title="Animações com Motion" text="Ilustrações e microinterações com motion/react: entram na tela, animam em loop e herdam seus tokens.">
-              <div className="mt-4 flex h-44 items-center justify-center overflow-hidden rounded-lg border bg-muted/20">
-                <ClientOnly fallback={<Skeleton className="size-32 rounded-full" />}>
-                  <div className="origin-center scale-[0.42]">
-                    <IntegrationsOrbit />
-                  </div>
-                </ClientOnly>
-              </div>
-            </FeatureCard>
-            <FeatureCard icon={MonitorSmartphone} title="Preview de verdade" text="Cada item compila e renderiza ao vivo num iframe isolado. Mobile, tablet e desktop, claro e escuro, com um clique." />
-            <FeatureCard icon={Moon} title="Primitivos em primeiro lugar" text="Escrito no estilo base-nova (Base UI). Em projetos Radix, o CLI instala os primitivos equivalentes do seu components.json." />
-            <div className="rounded-xl border bg-card p-5 lg:col-span-1">
-              <div className="flex items-center gap-2">
-                <Terminal className="size-5 text-brand" />
-                <h3 className="font-medium">Instale via CLI ou copie e cole</h3>
-              </div>
-              <div className="mt-3">
-                <InstallTabs
-                  cli={<CodeBlock lang="bash" code={`npx shadcn@latest add ${SITE_URL}/r/${exampleSlug}.json`} />}
-                  mcp={<CodeBlock lang="bash" code={`claude mcp add --transport http ui-catalog ${SITE_URL}/api/mcp \\\n  --header "Authorization: Bearer $UI_CATALOG_MCP_TOKEN"`} />}
-                  prompt={<CodeBlock lang="bash" code={`"usa o ${exampleSlug} do UI Catalog na home"`} />}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Essentials />
 
       {/* ── Ferramentas de IA ────────────────────────────────────────────── */}
       <section className="border-t bg-muted/20">
@@ -408,17 +345,6 @@ function SectionHead({ eyebrow, title, text, center }: { eyebrow: string; title:
       <div className="mb-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{eyebrow}</div>
       <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h2>
       {text && <p className="mt-3 text-muted-foreground">{text}</p>}
-    </div>
-  );
-}
-
-function FeatureCard({ icon: Icon, title, text, children }: { icon: React.ComponentType<{ className?: string }>; title: string; text: string; children?: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border bg-card p-5">
-      <Icon className="size-5 text-brand" />
-      <h3 className="mt-3 font-medium">{title}</h3>
-      <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
-      {children}
     </div>
   );
 }
