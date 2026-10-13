@@ -6,6 +6,7 @@ import { GROUPS } from '@/lib/groups';
 import { KINDS, kindByPath } from '@/lib/site';
 import { getCategoryCards, groupCategoryCards } from '@/lib/items';
 import { CategoryCard } from '@/components/site/category-card';
+import { IllustrationShowcase } from '@/components/site/illustration-showcase';
 import { CategoryTabs } from '@/components/site/category-tabs';
 import { ItemGrid } from '@/components/site/item-grid';
 import { Button } from '@/components/ui/button';
@@ -93,6 +94,7 @@ export default async function KindPage({ params, searchParams }: { params: Promi
         </div>
       ) : (
         <>
+          {meta.kind === 'ILLUSTRATION' && <IllustrationShowcase />}
           {hasGroups && groups.length > 1 && <CategoryTabs tabs={groups.map((g) => ({ slug: g.group.slug, name: g.group.name, count: g.count }))} prefix="g-" />}
           {groups.map((g) => (
             <section key={g.group.slug} id={`g-${g.group.slug}`} className="scroll-mt-32 border-b py-12 last:border-b-0">
