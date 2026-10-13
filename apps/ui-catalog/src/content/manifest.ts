@@ -24,6 +24,9 @@ import { ENTRIES as W2_COMPONENTS_A } from './entries/wave2-components-a';
 import { ENTRIES as W2_COMPONENTS_B } from './entries/wave2-components-b';
 import { ENTRIES as W2_PAGES } from './entries/wave2-pages';
 import { ENTRIES as W2_ILLUSTRATIONS } from './entries/wave2-illustrations';
+import { ENTRIES as W3_ILLUSTRATIONS } from './entries/wave3-illustrations';
+import { ENTRIES as W3_BLOCKS } from './entries/wave3-blocks';
+import { ENTRIES as W3_MISC } from './entries/wave3-misc';
 
 export type { CategoryDef } from './taxonomy';
 export { CATEGORIES };
@@ -139,4 +142,7 @@ export const CONTENT: ContentEntry[] = [
   ...W2_COMPONENTS_B,
   ...W2_PAGES,
   ...W2_ILLUSTRATIONS,
+  ...W3_ILLUSTRATIONS,
+  ...W3_BLOCKS,
+  ...W3_MISC,
 ];
