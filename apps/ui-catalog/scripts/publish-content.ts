@@ -22,7 +22,21 @@ function resolveTarget(): { url: string; token: string } {
 const target = resolveTarget();
 let id = 0;
 
-async function call(name: string, args: Record<string, unknown>): Promise<any> {
+// Re-tenta erros transitórios (502/503 durante redeploy, timeouts) com backoff.
+async function call(name: string, args: Record<string, unknown>, attempt = 1): Promise<any> {
+  try {
+    return await callOnce(name, args);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (attempt < 5 && /HTTP 5\d\d|fetch failed|ECONNRESET|ETIMEDOUT|socket/i.test(msg)) {
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+      return call(name, args, attempt + 1);
+    }
+    throw e;
+  }
+}
+
+async function callOnce(name: string, args: Record<string, unknown>): Promise<any> {
   const res = await fetch(target.url, {
     method: 'POST',
     headers: { authorization: `Bearer ${target.token}`, 'content-type': 'application/json' },
@@ -62,7 +76,12 @@ async function main() {
       ...(entry.previewHeight ? { previewHeight: entry.previewHeight } : {}),
     };
     try {
-      const existing = await call('get_item', { idOrSlug: slug }).catch(() => null);
+      // Só trata como inexistente quando o servidor diz "não encontrado" — qualquer outro erro aborta
+      // este item (evita criar duplicado com sufixo quando o get falha por instabilidade).
+      const existing = await call('get_item', { idOrSlug: slug }).catch((e: unknown) => {
+        if (e instanceof Error && /não encontrado/i.test(e.message)) return null;
+        throw e;
+      });
       if (existing && typeof existing === 'object' && existing.slug === slug) {
         await call('update_item', { idOrSlug: slug, ...payload });
         updated++;
