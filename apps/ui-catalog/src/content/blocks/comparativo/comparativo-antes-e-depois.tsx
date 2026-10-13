@@ -26,7 +26,7 @@ export default function ComparativoAntesEDepois() {
         <div className="max-w-2xl">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Antes e depois</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">A mesma equipe, com outra rotina</h2>
-          <p className="mt-3 text-muted-foreground">O que muda na primeira semana depois de ligar a Clickmax.</p>
+          <p className="mt-3 text-muted-foreground">O que muda na primeira semana depois de ligar a Lumio.</p>
         </div>
 
         <div className="relative mt-10 grid gap-6 lg:grid-cols-2 lg:gap-10">
@@ -66,7 +66,7 @@ export default function ComparativoAntesEDepois() {
             <div className="pointer-events-none absolute -top-24 -right-24 size-56 rounded-full bg-primary/10 blur-3xl" />
             <div className="relative flex items-center justify-between">
               <Badge>Depois</Badge>
-              <span className="text-xs text-muted-foreground">Clickmax</span>
+              <span className="text-xs text-muted-foreground">Lumio</span>
             </div>
             <div className="relative mt-6">
               <div className="text-4xl font-semibold tracking-tight">20 min por dia</div>

@@ -33,7 +33,7 @@ export default function ListaDeEsperaComContador() {
         <Badge variant="secondary" className="gap-1.5">
           <span className="size-1.5 rounded-full bg-primary" /> Lançamento em novembro
         </Badge>
-        <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">Entre na lista de espera do Clickmax Flows</h1>
+        <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">Entre na lista de espera do Lumio Flows</h1>
         <p className="mt-4 max-w-lg text-lg text-muted-foreground">Automações visuais para WhatsApp, Instagram e e-mail. Quem está na lista entra primeiro e paga metade no primeiro ano.</p>
 
         <div className="mt-10">

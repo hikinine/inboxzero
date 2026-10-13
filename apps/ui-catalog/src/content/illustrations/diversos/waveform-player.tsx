@@ -63,7 +63,7 @@ export default function WaveformPlayer() {
         </span>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">Vendas com IA — Ep. 12</div>
-          <div className="text-[11px] text-muted-foreground">Podcast Clickmax · 38 min</div>
+          <div className="text-[11px] text-muted-foreground">Podcast Lumio · 38 min</div>
         </div>
         <span className="rounded-full border px-2 py-0.5 text-[10px] font-medium">1x</span>
       </div>

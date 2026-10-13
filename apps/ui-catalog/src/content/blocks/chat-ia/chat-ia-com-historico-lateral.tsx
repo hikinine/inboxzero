@@ -153,7 +153,7 @@ export default function ChatIaComHistoricoLateral() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{conv.titulo}</p>
-              <p className="text-xs text-muted-foreground">Assistente Clickmax · baseado nos dados do seu CRM</p>
+              <p className="text-xs text-muted-foreground">Assistente Lumio · baseado nos dados do seu CRM</p>
             </div>
           </div>
 

@@ -56,7 +56,7 @@ const OPCOES: Opcao[] = [
   {
     id: 'nos',
     Icon: Sparkles,
-    title: 'Com a Clickmax',
+    title: 'Com a Lumio',
     subtitle: 'Plataforma pronta + time de implantação',
     price: 'R$ 297',
     priceNote: 'por mês, sem fidelidade',

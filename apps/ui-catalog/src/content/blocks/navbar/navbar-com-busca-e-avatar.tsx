@@ -24,7 +24,7 @@ export default function NavbarComBuscaEAvatar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-6">
         <a href="#" className="flex shrink-0 items-center gap-2 font-semibold">
           <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-xs font-bold text-primary-foreground">C</span>
-          <span className="hidden sm:inline">Clickmax</span>
+          <span className="hidden sm:inline">Lumio</span>
         </a>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Principal">

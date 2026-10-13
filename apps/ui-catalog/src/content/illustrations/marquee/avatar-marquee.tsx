@@ -30,7 +30,7 @@ export default function AvatarMarquee() {
   return (
     <div className="w-[480px] overflow-hidden py-2 text-foreground [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
       <div className="mb-3 flex items-center justify-between px-6 text-[11px] text-muted-foreground">
-        <span className="font-medium uppercase tracking-wider">Time Clickmax</span>
+        <span className="font-medium uppercase tracking-wider">Time Lumio</span>
         <span>24 pessoas · 6 online</span>
       </div>
 

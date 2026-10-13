@@ -93,7 +93,7 @@ export default function LogoCloudEmDuasFaixasOpostas() {
     <section className="w-full overflow-hidden border-y bg-muted/30 py-14 sm:py-16">
       <div className="mx-auto max-w-6xl px-6 text-center">
         <p className="text-sm text-muted-foreground">
-          Mais de <span className="font-semibold text-foreground">2.400 empresas</span> atendem com a Clickmax — de marcas nacionais a negócios de bairro
+          Mais de <span className="font-semibold text-foreground">2.400 empresas</span> atendem com a Lumio — de marcas nacionais a negócios de bairro
         </p>
       </div>
 

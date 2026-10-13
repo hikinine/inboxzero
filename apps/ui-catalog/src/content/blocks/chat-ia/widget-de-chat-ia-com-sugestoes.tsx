@@ -67,7 +67,7 @@ export default function WidgetDeChatIaComSugestoes() {
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">Assistente Clickmax</span>
+              <span className="text-sm font-semibold">Assistente Lumio</span>
               <Badge variant="secondary">Beta</Badge>
             </div>
             <p className="text-xs text-muted-foreground">Pergunte sobre leads, vendas e atendimento. Respostas baseadas nos dados do seu CRM.</p>

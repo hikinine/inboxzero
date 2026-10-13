@@ -24,7 +24,7 @@ const LEVELS = [
 ] as const
 
 export default function RedefinirSenhaComForca() {
-  const [senha, setSenha] = useState('Clickmax2026')
+  const [senha, setSenha] = useState('Lumio2026')
   const [confirma, setConfirma] = useState('')
   const [show, setShow] = useState(false)
 

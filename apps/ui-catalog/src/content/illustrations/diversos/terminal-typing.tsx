@@ -7,7 +7,7 @@ import { motion } from 'motion/react'
 const SCRIPT = [
   { cmd: 'pnpm install', out: ['Packages: +184', 'Progress: resolved 184, reused 180, downloaded 4', 'Pronto em 2,1s'] },
   { cmd: 'pnpm build', out: ['▲ Next.js 15.5', '✓ Compilado em 3,2s', '✓ 12 rotas estáticas geradas'] },
-  { cmd: 'git push origin main', out: ['Enumerating objects: 24, done.', 'To github.com:clickmax/app.git', '   9b109fb..4d1a744  main -> main'] },
+  { cmd: 'git push origin main', out: ['Enumerating objects: 24, done.', 'To github.com:lumio/app.git', '   9b109fb..4d1a744  main -> main'] },
 ] as const
 
 interface Line {
@@ -58,7 +58,7 @@ export default function TerminalTyping() {
         <span className="size-2.5 rounded-full bg-rose-500" />
         <span className="size-2.5 rounded-full bg-amber-400" />
         <span className="size-2.5 rounded-full bg-emerald-500" />
-        <span className="absolute inset-x-0 text-center text-[11px] text-zinc-500">paulo@clickmax — zsh</span>
+        <span className="absolute inset-x-0 text-center text-[11px] text-zinc-500">dev@lumio — zsh</span>
       </div>
       <div className="flex flex-1 flex-col justify-end overflow-hidden p-4">
         {lines.map((l, i) =>

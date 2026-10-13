@@ -48,7 +48,7 @@ export default function ComparativoNosVsEles() {
       <div className="mx-auto max-w-4xl">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Comparativo</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Por que times trocam o CRM antigo pela Clickmax</h2>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Por que times trocam o CRM antigo pela Lumio</h2>
           <p className="mt-3 text-muted-foreground">Sem letra miúda: o que vem incluso de verdade em cada opção.</p>
         </div>
 
@@ -60,7 +60,7 @@ export default function ComparativoNosVsEles() {
                 <TableHead className="h-14 bg-primary/5 text-center">
                   <div className="flex flex-col items-center gap-1">
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                      <span className="size-4 rounded bg-primary" /> Clickmax
+                      <span className="size-4 rounded bg-primary" /> Lumio
                     </span>
                     <Badge className="h-4 px-1.5 text-[10px]">Recomendado</Badge>
                   </div>

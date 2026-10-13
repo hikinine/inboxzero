@@ -15,7 +15,7 @@ interface Msg {
 }
 
 const INITIAL: Msg[] = [
-  { id: 1, from: 'bot', text: 'Oi! Sou a Lia, assistente da Clickmax. Posso ajudar com planos, integrações ou dúvidas técnicas.' },
+  { id: 1, from: 'bot', text: 'Oi! Sou a Lia, assistente da Lumio. Posso ajudar com planos, integrações ou dúvidas técnicas.' },
   { id: 2, from: 'user', text: 'Vocês integram com o WhatsApp Business?' },
   { id: 3, from: 'bot', text: 'Sim! A integração oficial leva uns 5 minutos. Quer que eu te mande o passo a passo?' },
 ]

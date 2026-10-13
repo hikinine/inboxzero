@@ -66,7 +66,7 @@ export default function ComparativoComSliderAntesEDepois() {
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Antes e depois</p>
           <h2 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Arraste e veja o atendimento mudar</h2>
-          <p className="mt-3 text-muted-foreground">À esquerda, a rotina com planilha e quatro apps. À direita, a mesma semana com a Clickmax.</p>
+          <p className="mt-3 text-muted-foreground">À esquerda, a rotina com planilha e quatro apps. À direita, a mesma semana com a Lumio.</p>
         </div>
 
         <div

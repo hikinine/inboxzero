@@ -46,7 +46,7 @@ export default function ChatIaComFontesCitadas() {
               <Sparkles className="size-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">Assistente Clickmax</p>
+              <p className="text-sm font-medium">Assistente Lumio</p>
               <p className="text-xs text-muted-foreground">Responde com base nos seus documentos e conversas</p>
             </div>
             <Badge variant="secondary">Com fontes</Badge>

@@ -87,7 +87,7 @@ export default function LogoOrbit() {
       />
       <div className="absolute left-1/2 top-1/2 flex size-[76px] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg">
         <span className="text-2xl font-black leading-none tracking-tighter">cx</span>
-        <span className="mt-1 text-[8px] font-semibold uppercase tracking-[0.2em] opacity-80">clickmax</span>
+        <span className="mt-1 text-[8px] font-semibold uppercase tracking-[0.2em] opacity-80">lumio</span>
       </div>
 
       <div className="absolute inset-x-0 bottom-1 text-center text-[11px] text-muted-foreground">{paused ? 'Pausado — tire o mouse para continuar' : 'Passe o mouse para pausar'}</div>
