@@ -16,7 +16,7 @@ import { getCategoryCards, getStats, listItems, type CategoryCardData } from '@/
 import { KINDS, LINKS } from '@/lib/site';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarGroup, AvatarGroupCount } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CategoryCard } from '@/components/site/category-card';
 import { PreviewCard } from '@/components/site/preview-frame';
 import { ClientOnly } from '@/components/site/client-only';
@@ -41,7 +41,7 @@ const PROMPTS = [
   { who: 'paulo', text: 'Monta uma página de settings com sidebar, usando só blocos que já existem no catálogo.', tag: 'compor' },
   { who: 'paulo', text: 'Troca a categoria desses 6 itens de Formulários para Input e marca os dois melhores como destaque.', tag: 'organizar' },
   { who: 'paulo', text: 'Gera o comando do shadcn CLI para instalar o kanban e a sidebar compacta.', tag: 'instalar' },
-  { who: 'paulo', text: 'Cria uma coleção “Clickmax” com navbar, hero e footer no visual do produto.', tag: 'coleção' },
+  { who: 'paulo', text: 'Cria uma coleção com navbar, hero e footer no visual do meu produto.', tag: 'coleção' },
 ];
 
 export default async function HomePage() {
@@ -63,19 +63,16 @@ export default async function HomePage() {
       <section className="relative overflow-hidden">
         <div className="bg-grid absolute inset-0 -z-10" />
         <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-6 pb-10 pt-16 text-center sm:pt-24">
-          <div className="mb-6 flex items-center gap-3 rounded-full border bg-card/60 py-1.5 pl-1.5 pr-4 text-xs text-muted-foreground backdrop-blur">
-            <AvatarGroup>
-              {['PS', 'CL', 'CM', 'TK'].map((n) => (
-                <Avatar key={n} size="sm">
-                  <AvatarFallback className="text-[9px] font-medium">{n}</AvatarFallback>
-                </Avatar>
-              ))}
-              <AvatarGroupCount>+</AvatarGroupCount>
-            </AvatarGroup>
+          <Link
+            href="/changelog"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card/60 py-1 pl-1 pr-3 text-xs text-muted-foreground backdrop-blur transition-colors hover:text-foreground"
+          >
+            <span className="rounded-full bg-brand px-2 py-0.5 font-medium text-brand-foreground">Novo</span>
             <span>
-              Usado no <strong className="text-foreground">Clickmax</strong>, <strong className="text-foreground">Codehall</strong> e <strong className="text-foreground">Tasky</strong>
+              <strong className="text-foreground">{stats.total}</strong> itens prontos para copiar e colar
             </span>
-          </div>
+            <ArrowRight className="size-3" />
+          </Link>
           <h1 className="max-w-4xl text-4xl font-semibold tracking-tight sm:text-6xl sm:leading-[1.05]">
             Construa interfaces futuristas em velocidade warp com <span className="underline decoration-brand decoration-4 underline-offset-8">shadcn/ui</span>
           </h1>
@@ -91,14 +88,6 @@ export default async function HomePage() {
             <Button size="lg" variant="outline" nativeButton={false} render={<Link href="#mcp" />}>
               Configurar MCP <ArrowRight data-icon="inline-end" />
             </Button>
-          </div>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-muted-foreground">
-            <span className="text-xs uppercase tracking-wider">Confiado por</span>
-            {['Clickmax', 'Codehall', 'Bilhon', 'Tasky'].map((b) => (
-              <span key={b} className="font-semibold tracking-tight text-foreground/70">
-                {b}
-              </span>
-            ))}
           </div>
         </div>
         <div className="mx-auto w-full max-w-screen-2xl px-6 lg:px-10 pb-14">
@@ -239,7 +228,7 @@ export default async function HomePage() {
           <div className="space-y-4 text-muted-foreground">
             <p>
               O shadcnstudio mostrou o formato certo: um catálogo de blocos e componentes com preview, organizado por categorias, instalável por uma linha. Mas o que faltava era um
-              catálogo <strong className="text-foreground">privado e vivo</strong> — alimentado pelos próprios projetos (Clickmax, Codehall, Tasky) e por um agente que escreve, valida e
+              catálogo <strong className="text-foreground">privado e vivo</strong> — alimentado pelos próprios projetos e por um agente que escreve, valida e
               publica.
             </p>
             <p>
