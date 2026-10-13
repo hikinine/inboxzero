@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Download, Sparkles } from 'lucide-react';
-import { findItem, listItems } from '@/lib/items';
+import { ChevronLeft, ChevronRight, Download, ExternalLink, FlaskConical, Sparkles } from 'lucide-react';
+import { findItem, getCategoryNeighbors, listItems, listRelatedByTags } from '@/lib/items';
+import { buildItemPrompt, v0Url } from '@/lib/prompt';
 import { deriveDeps } from '@/lib/code';
-import { SITE_URL, installCommand, kindMeta } from '@/lib/site';
+import { kindMeta } from '@/lib/site';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { CodeBlock } from '@/components/site/code-block';
 import { CopyButton } from '@/components/site/copy-button';
-import { InstallCommand } from '@/components/site/install-command';
+import { InstallPanel } from '@/components/site/install-panel';
 import { ItemCard } from '@/components/site/item-card';
 import { FavoriteButton } from '@/components/site/favorite-button';
 import { ItemPreview } from './item-preview';
@@ -32,21 +33,21 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
   const derived = deriveDeps(item.code);
   const deps = [...new Set([...item.dependencies, ...derived.dependencies])];
   const regDeps = [...new Set([...item.registryDependencies, ...derived.registryDependencies])];
-  const related = item.category
-    ? (await listItems({ kind: item.kind, category: item.category.slug, status: 'PUBLISHED' }, { limit: 7 })).items.filter((i) => i.id !== item.id).slice(0, 6)
-    : [];
+  const [related, byTags, neighbors] = await Promise.all([
+    item.category
+      ? listItems({ kind: item.kind, category: item.category.slug, status: 'PUBLISHED' }, { limit: 7 }).then((r) => r.items.filter((i) => i.id !== item.id).slice(0, 6))
+      : Promise.resolve([]),
+    listRelatedByTags(item, 6),
+    getCategoryNeighbors(item),
+  ]);
 
-  const url = `${SITE_URL}/item/${item.slug}`;
-  const prompt = [
-    `Use o item "${item.name}" (${meta.singular.toLowerCase()}) do UI Catalog no projeto.`,
-    `Instale com: ${installCommand(item.slug)}`,
-    `Preview e detalhes: ${url}`,
-    `Código cru: ${SITE_URL}/api/items/${item.slug}/code (ou via MCP: get_item "${item.slug}").`,
-  ].join('\n');
+  const prompt = buildItemPrompt({ slug: item.slug, name: item.name, kind: item.kind, description: item.description, dependencies: deps, registryDependencies: regDeps });
+
 
   return (
     <div className="w-full px-6 lg:px-10 py-8">
-      <nav className="mb-4 text-xs text-muted-foreground">
+      <div className="mb-4 flex items-center justify-between gap-3">
+      <nav className="text-xs text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           Início
         </Link>{' '}
@@ -65,6 +66,21 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
         )}{' '}
         / <span className="text-foreground">{item.name}</span>
       </nav>
+        {(neighbors.prev || neighbors.next) && (
+          <div className="flex shrink-0 items-center gap-1">
+            {neighbors.prev && (
+              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/item/${neighbors.prev.slug}`} title={neighbors.prev.name} />}>
+                <ChevronLeft data-icon="inline-start" /> Anterior
+              </Button>
+            )}
+            {neighbors.next && (
+              <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={`/item/${neighbors.next.slug}`} title={neighbors.next.name} />}>
+                Próximo <ChevronRight data-icon="inline-end" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
 
       <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl">
@@ -82,7 +98,12 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
           <Button variant="outline" size="sm" nativeButton={false} render={<a href={`/api/items/${item.slug}/code?download=1`} />}>
             <Download /> Baixar .tsx
           </Button>
-          <CopyButton value={prompt} label="Copiar prompt" variant="outline" />
+          <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`/playground?slug=${item.slug}`} />}>
+            <FlaskConical /> Playground
+          </Button>
+          <Button variant="outline" size="sm" nativeButton={false} render={<a href={v0Url(item.slug)} target="_blank" rel="noreferrer" />}>
+            <ExternalLink /> Abrir no v0
+          </Button>
           <DeleteItemButton id={item.id} name={item.name} backHref={`/${meta.path}`} />
         </div>
       </header>
@@ -95,7 +116,7 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
         <aside className="space-y-5 text-sm">
           <div>
             <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Instalar</div>
-            <InstallCommand slug={item.slug} />
+            <InstallPanel slug={item.slug} prompt={prompt} deps={deps} regDeps={regDeps} v0={v0Url(item.slug)} />
             <p className="mt-2 text-xs text-muted-foreground">
               Registry compatível com o shadcn CLI. Também em{' '}
               <a href={`/r/${item.slug}.json`} className="underline" target="_blank" rel="noreferrer">
@@ -190,6 +211,18 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5">
             {related.map((it) => (
               <ItemCard key={it.id} item={it} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {byTags.length > 0 && (
+        <section className="mt-16">
+          <h2 className="mb-1 text-lg font-semibold tracking-tight">Combina com</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Itens de outras categorias com as mesmas tags.</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-[1920px]:grid-cols-5">
+            {byTags.map((it) => (
+              <ItemCard key={it.id} item={it} showKind />
             ))}
           </div>
         </section>

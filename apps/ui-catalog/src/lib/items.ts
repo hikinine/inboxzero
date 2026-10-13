@@ -322,3 +322,40 @@ export async function getCollectionCards(): Promise<CollectionCardData[]> {
       };
     });
 }
+
+// ── Página do item: relacionados por tag e vizinhos na categoria ─────────────────────────────
+// Itens publicados (de qualquer tipo, fora da mesma categoria) que compartilham tags, por nº de tags em comum.
+export async function listRelatedByTags(item: { id: string; categoryId: string | null; tags: Array<{ tag: { slug: string } }> }, limit = 8): Promise<ItemMeta[]> {
+  const slugs = item.tags.map((t) => t.tag.slug).filter((s) => !['animado', 'codehall'].includes(s));
+  if (!slugs.length) return [];
+  const rows = await prisma.item.findMany({
+    where: {
+      id: { not: item.id },
+      status: 'PUBLISHED',
+      ...(item.categoryId ? { NOT: { categoryId: item.categoryId } } : {}),
+      tags: { some: { tag: { slug: { in: slugs } } } },
+    },
+    take: 60,
+    select: metaSelect,
+  });
+  const set = new Set(slugs);
+  return rows
+    .map((r) => ({ r, score: r.tags.filter((t) => set.has(t.tag.slug)).length }))
+    .sort((a, b) => b.score - a.score || Number(b.r.featured) - Number(a.r.featured) || b.r.createdAt.getTime() - a.r.createdAt.getTime())
+    .slice(0, limit)
+    .map((x) => toMeta(x.r));
+}
+
+// Anterior/próximo na mesma ordem da página de categoria (featured desc, createdAt desc, id desc).
+export async function getCategoryNeighbors(item: { id: string; categoryId: string | null }): Promise<{ prev: { slug: string; name: string } | null; next: { slug: string; name: string } | null }> {
+  if (!item.categoryId) return { prev: null, next: null };
+  const list = await prisma.item.findMany({
+    where: { categoryId: item.categoryId, status: 'PUBLISHED' },
+    orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+    select: { id: true, slug: true, name: true },
+  });
+  const i = list.findIndex((x) => x.id === item.id);
+  if (i < 0) return { prev: null, next: null };
+  const pick = (x?: { slug: string; name: string }) => (x ? { slug: x.slug, name: x.name } : null);
+  return { prev: pick(list[i - 1]), next: pick(list[i + 1]) };
+}

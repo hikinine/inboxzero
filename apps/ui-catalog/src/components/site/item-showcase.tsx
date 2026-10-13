@@ -4,9 +4,10 @@
 // abas Preview/Código, copiar código/CLI, favorito e link — e o preview interativo em largura total.
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowUpRight, Code2, Eye, Monitor, Moon, RefreshCw, Smartphone, Sun, Tablet, Terminal } from 'lucide-react';
+import { ArrowUpRight, Code2, ExternalLink, Eye, FlaskConical, Monitor, Moon, RefreshCw, Smartphone, Sun, Tablet, Terminal } from 'lucide-react';
 import type { ItemMeta } from '@/lib/items';
 import { installCommand, isNew } from '@/lib/site';
+import { buildItemPrompt, v0Url } from '@/lib/prompt';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -97,6 +98,19 @@ export function ItemShowcase({ item, code, codeBlock, index }: { item: ItemMeta;
             </Button>
             <CopyButton value={installCommand(item.slug)} label="CLI" variant="outline" className="h-7 text-xs" />
             <CopyButton value={code} label="Código" variant="outline" className="h-7 text-xs" />
+            <CopyButton value={buildItemPrompt(item)} label="Prompt" variant="outline" className="h-7 text-xs" />
+            <Tooltip>
+              <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Abrir no playground" nativeButton={false} render={<Link href={`/playground?slug=${item.slug}`} />} />}>
+                <FlaskConical />
+              </TooltipTrigger>
+              <TooltipContent>Abrir no playground</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Abrir no v0" nativeButton={false} render={<a href={v0Url(item.slug)} target="_blank" rel="noreferrer" />} />}>
+                <ExternalLink />
+              </TooltipTrigger>
+              <TooltipContent>Abrir no v0</TooltipContent>
+            </Tooltip>
             <FavoriteButton slug={item.slug} />
             <Button variant="ghost" size="icon-sm" aria-label="Abrir página do item" nativeButton={false} render={<Link href={href} />}>
               <ArrowUpRight />
