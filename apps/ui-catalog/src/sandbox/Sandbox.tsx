@@ -78,6 +78,42 @@ function Loading() {
   );
 }
 
+// Modo thumbnail (?thumb=1, usado nos cards do grid): nunca rola e, no modo "center", reduz o
+// conteúdo com transform para caber inteiro no viewport do iframe.
+function useThumbFit(enabled: boolean, fit: 'center' | 'full', ready: boolean) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [scale, setScale] = React.useState(1);
+  React.useEffect(() => {
+    if (!enabled) return;
+    const de = document.documentElement;
+    de.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    de.style.scrollbarWidth = 'none';
+  }, [enabled]);
+  React.useEffect(() => {
+    if (!enabled || fit !== 'center' || !ready) return;
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const pad = 24;
+      const w = el.scrollWidth;
+      const h = el.scrollHeight;
+      if (!w || !h) return;
+      const s = Math.min(1, (window.innerWidth - pad * 2) / w, (window.innerHeight - pad * 2) / h);
+      setScale(Math.max(0.2, s));
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    measure();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [enabled, fit, ready]);
+  return { ref, scale };
+}
+
 export function Sandbox({
   code,
   slug,
@@ -154,9 +190,19 @@ export function Sandbox({
     };
   }, [slug, state.status]);
 
+  // Lido após montar (no SSR não há location) — evita mismatch de hidratação.
+  const [thumb, setThumb] = React.useState(false);
+  React.useEffect(() => setThumb(new URLSearchParams(location.search).get('thumb') === '1'), []);
+  const fitRef = useThumbFit(thumb, fit, state.status === 'ready');
+
   const onError = React.useCallback((message: string) => post({ source: SANDBOX_SOURCE, type: 'error', slug, message }), [slug]);
 
-  const wrapper = fit === 'center' ? 'flex min-h-screen w-full items-center justify-center p-8' : 'min-h-screen w-full';
+  const wrapper =
+    fit === 'center'
+      ? thumb
+        ? 'flex h-screen w-full items-center justify-center overflow-hidden'
+        : 'flex min-h-screen w-full items-center justify-center p-8'
+      : 'min-h-screen w-full';
 
   return (
     <div className={wrapper} data-sandbox-root>
@@ -166,7 +212,12 @@ export function Sandbox({
       {state.status === 'ready' && state.Component && (
         <TooltipProvider>
           <Boundary onError={onError} resetKey={version}>
-            <div className={fit === 'center' ? 'w-full max-w-full [&>*]:mx-auto' : 'w-full'} data-sandbox-content>
+            <div
+              ref={fitRef.ref}
+              className={fit === 'center' ? (thumb ? 'w-max max-w-[1100px] shrink-0 [&>*]:mx-auto' : 'w-full max-w-full [&>*]:mx-auto') : 'w-full'}
+              style={thumb && fit === 'center' && fitRef.scale < 1 ? { transform: `scale(${fitRef.scale})`, transformOrigin: 'center center' } : undefined}
+              data-sandbox-content
+            >
               <state.Component />
             </div>
           </Boundary>

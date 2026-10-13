@@ -102,7 +102,7 @@ export const TOOLS = [
   },
   {
     name: 'list_categories',
-    description: 'Lista as categorias (opcionalmente de um tipo) com a contagem de itens.',
+    description: 'Lista as categorias (opcionalmente de um tipo) com a contagem de itens, intro e FAQ das páginas de docs.',
     inputSchema: {
       type: 'object',
       properties: { kind: { type: 'string', enum: ['COMPONENT', 'BLOCK', 'PAGE', 'ILLUSTRATION'] } },
@@ -110,7 +110,8 @@ export const TOOLS = [
   },
   {
     name: 'upsert_category',
-    description: 'Cria ou atualiza uma categoria (nome, descrição exibida na seção, grupo, ordem). Útil para dar descrição às seções do catálogo.',
+    description:
+      'Cria ou atualiza uma categoria (nome, descrição exibida na seção, grupo, ordem, intro e FAQ). Útil para dar descrição às seções do catálogo e preencher as docs de componente (/docs/components/<slug>).',
     inputSchema: {
       type: 'object',
       required: ['kind', 'name'],
@@ -120,6 +121,12 @@ export const TOOLS = [
         description: { type: 'string' },
         group: { type: 'string', description: 'Slug do grupo da categoria. BLOCK: marketing | dashboard | ecommerce | datatable | bento. PAGE: marketing | app. Vazio desagrupa.' },
         order: { type: 'number', description: 'Ordem de exibição (menor primeiro, default 100)' },
+        intro: { type: 'string', description: 'Texto de abertura da página de docs da categoria (1–3 frases). Vazio remove.' },
+        faq: {
+          type: 'array',
+          description: 'Perguntas frequentes da página de docs. Substitui a lista inteira; [] remove.',
+          items: { type: 'object', required: ['q', 'a'], properties: { q: { type: 'string', description: 'Pergunta' }, a: { type: 'string', description: 'Resposta' } } },
+        },
       },
     },
   },
@@ -313,12 +320,38 @@ export async function deleteItemById(idOrSlug: string) {
   return { id: existing.id, slug: existing.slug };
 }
 
-export async function upsertCategory(input: { kind: ItemKind; name: string; description?: string | null; group?: string | null; order?: number }) {
+export interface CategoryFaq {
+  q: string;
+  a: string;
+}
+
+// Normaliza o campo `faq` (Json) de uma categoria para [{q,a}] — ignora entradas malformadas.
+export function parseFaq(raw: unknown): CategoryFaq[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((f): f is CategoryFaq => !!f && typeof f === 'object' && typeof (f as CategoryFaq).q === 'string' && typeof (f as CategoryFaq).a === 'string');
+}
+
+function faqValue(faq: CategoryFaq[] | null | undefined) {
+  const list = (faq ?? []).map((f) => ({ q: f.q.trim(), a: f.a.trim() })).filter((f) => f.q && f.a);
+  return list.length ? (list as unknown as Prisma.InputJsonValue) : Prisma.DbNull;
+}
+
+export async function upsertCategory(input: {
+  kind: ItemKind;
+  name: string;
+  description?: string | null;
+  group?: string | null;
+  order?: number;
+  intro?: string | null;
+  faq?: CategoryFaq[] | null;
+}) {
   const slug = slugify(input.name);
   const update: Prisma.CategoryUpdateInput = { name: input.name.trim() };
   if (input.description !== undefined) update.description = input.description?.trim() || null;
   if (input.group !== undefined) update.group = input.group?.trim() || null;
   if (input.order !== undefined) update.order = input.order;
+  if (input.intro !== undefined) update.intro = input.intro?.trim() || null;
+  if (input.faq !== undefined) update.faq = faqValue(input.faq);
   return prisma.category.upsert({
     where: { kind_slug: { kind: input.kind, slug } },
     create: {
@@ -328,6 +361,8 @@ export async function upsertCategory(input: { kind: ItemKind; name: string; desc
       description: input.description?.trim() || null,
       group: input.group?.trim() || null,
       order: input.order ?? 100,
+      intro: input.intro?.trim() || null,
+      faq: faqValue(input.faq),
     },
     update,
   });
@@ -471,17 +506,35 @@ async function listCategories(args: unknown): Promise<ToolResult> {
   });
   return ok({
     count: rows.length,
-    categories: rows.map((c) => ({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, group: c.group, order: c.order, items: c._count.items })),
+    categories: rows.map((c) => ({
+      kind: c.kind,
+      slug: c.slug,
+      name: c.name,
+      description: c.description,
+      group: c.group,
+      order: c.order,
+      intro: c.intro,
+      faq: parseFaq(c.faq),
+      items: c._count.items,
+    })),
   });
 }
 
 async function upsertCategoryTool(args: unknown): Promise<ToolResult> {
   const p = z
-    .object({ kind: kindSchema, name: z.string().min(1), description: z.string().optional(), group: z.string().optional(), order: z.number().int().optional() })
+    .object({
+      kind: kindSchema,
+      name: z.string().min(1),
+      description: z.string().optional(),
+      group: z.string().optional(),
+      order: z.number().int().optional(),
+      intro: z.string().optional(),
+      faq: z.array(z.object({ q: z.string().min(1), a: z.string().min(1) })).optional(),
+    })
     .safeParse(args ?? {});
   if (!p.success) return fail(`Entrada inválida: ${p.error.message}`);
   const c = await upsertCategory(p.data);
-  return ok({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, group: c.group, order: c.order });
+  return ok({ kind: c.kind, slug: c.slug, name: c.name, description: c.description, group: c.group, order: c.order, intro: c.intro, faq: parseFaq(c.faq) });
 }
 
 async function deleteCategoryTool(args: unknown): Promise<ToolResult> {

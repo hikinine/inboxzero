@@ -112,7 +112,7 @@ export function SearchCommand({ className }: { className?: string }) {
                 {categories.map((c) => {
                   const m = kindMeta(c.kind ?? 'BLOCK');
                   return (
-                    <CommandItem key={`${c.kind}-${c.slug}`} value={`cat:${c.kind}:${c.slug}`} onSelect={() => go(`/${m.path}/${c.slug}`)}>
+                    <CommandItem key={`${c.kind}-${c.slug}`} value={`cat:${c.kind}:${c.slug}`} onSelect={() => go(c.kind === 'COMPONENT' ? `/docs/components/${c.slug}` : `/${m.path}/${c.slug}`)}>
                       <Folder className="text-muted-foreground" />
                       <span className="truncate">{c.name}</span>
                       <span className="ml-auto text-xs text-muted-foreground">

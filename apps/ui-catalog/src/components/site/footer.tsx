@@ -58,7 +58,7 @@ export async function SiteFooter() {
             <div className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">Componentes shadcn</div>
             <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm">
               {compCats.map((c) => (
-                <Link key={c.slug} href={`/components/${c.slug}`} className="text-foreground/70 hover:text-foreground">
+                <Link key={c.slug} href={`/docs/components/${c.slug}`} className="text-foreground/70 hover:text-foreground">
                   {c.name} <span className="text-xs text-muted-foreground">{c.count}</span>
                 </Link>
               ))}

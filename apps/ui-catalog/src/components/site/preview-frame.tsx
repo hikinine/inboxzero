@@ -67,7 +67,7 @@ export function PreviewCard({ slug, kind, theme: override, className }: { slug: 
   }, []);
 
   const scale = scaled && width ? width / meta.previewWidth : 1;
-  const src = `/preview/${slug}?theme=${initialTheme}&fit=${scaled ? 'full' : 'center'}`;
+  const src = `/preview/${slug}?theme=${initialTheme}&fit=${scaled ? 'full' : 'center'}&thumb=1`;
 
   return (
     <div ref={ref} className={cn('relative w-full overflow-hidden bg-background', className)} style={{ aspectRatio: meta.cardAspect }}>
@@ -80,6 +80,7 @@ export function PreviewCard({ slug, kind, theme: override, className }: { slug: 
           loading="lazy"
           tabIndex={-1}
           aria-hidden
+          scrolling="no"
           sandbox="allow-scripts allow-same-origin"
           onLoad={() => setLoaded(true)}
           className="pointer-events-none absolute left-0 top-0 border-0 bg-background"

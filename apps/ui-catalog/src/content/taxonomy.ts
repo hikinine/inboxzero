@@ -10,10 +10,127 @@ export interface CategoryDef {
   description: string;
   order: number;
   group?: string; // slug de GROUPS[kind]
+  intro?: string; // abertura da página de docs (/docs/components/<slug>); sem ela, usa a description
+  faq?: Array<{ q: string; a: string }>; // perguntas frequentes da página de docs (crases viram <code>)
 }
 
+// Conteúdo das páginas de docs dos componentes mais usados (o resto cai no FAQ padrão gerado pela página).
+// Também pode ser editado pelo MCP (upsert_category com intro/faq).
+const COMPONENT_DOCS: Record<string, Pick<CategoryDef, 'intro' | 'faq'>> = {
+  Button: {
+    intro:
+      'O Button é a ação principal de qualquer interface: enviar um formulário, abrir um diálogo, confirmar uma compra. Aqui estão variantes prontas sobre o primitivo do shadcn/ui (Base UI), com tamanhos, ícones, estados de carregamento e grupos, todas usando os tokens do tema e funcionando no claro e no escuro.',
+    faq: [
+      { q: 'Como uso o Button como link?', a: 'No estilo base-nova não existe `asChild`: passe o elemento em `render` e desligue o botão nativo, como em `<Button nativeButton={false} render={<Link href="/precos" />}>Ver planos</Button>`.' },
+      { q: 'Como mostro um estado de carregamento?', a: 'Desabilite o botão com `disabled` enquanto a ação roda e coloque um `<Spinner data-icon="inline-start" />` antes do texto. O `data-icon` ajusta o espaçamento automaticamente.' },
+      { q: 'Quais variantes e tamanhos existem?', a: 'O primitivo traz `default`, `secondary`, `outline`, `ghost`, `destructive` e `link`, e os tamanhos `xs`, `sm`, `default`, `lg` e as versões quadradas `icon-xs`, `icon-sm`, `icon` e `icon-lg`.' },
+      { q: 'Posso criar uma variante própria?', a: 'Sim. As variantes vêm de `buttonVariants` (cva) em `components/ui/button.tsx`; adicione uma chave nova ali ou componha classes com `className` no uso, mantendo os tokens semânticos (`bg-primary`, `text-primary-foreground`).' },
+    ],
+  },
+  Input: {
+    intro:
+      'O Input é o campo de texto básico de formulários. As variantes cobrem rótulo, ícones, prefixos, botões embutidos, contagem de caracteres, validação e estados desabilitado e somente leitura, sempre com foco visível e acessível.',
+    faq: [
+      { q: 'Como coloco um ícone dentro do campo?', a: 'Use o `InputGroup` com `InputGroupAddon` e `InputGroupInput`, ou posicione o ícone com `absolute` dentro de um wrapper `relative` e dê `pl-9` ao Input.' },
+      { q: 'Como mostro um erro de validação?', a: 'Marque o campo com `aria-invalid` (o primitivo pinta a borda e o anel com `destructive`) e exiba a mensagem num `FieldError` ou num `<p>` ligado por `aria-describedby`.' },
+      { q: 'Funciona com React Hook Form?', a: 'Sim. O Input repassa `ref` e as props nativas, então `{...register("email")}` ou o `Controller` funcionam sem adaptação.' },
+    ],
+  },
+  Dialog: {
+    intro:
+      'O Dialog abre uma janela modal sobre a página para formulários curtos, confirmações e conteúdo que pede atenção total. O foco fica preso dentro do diálogo, Esc fecha e o conteúdo de fundo fica inerte, tudo vindo do primitivo do Base UI.',
+    faq: [
+      { q: 'Qual a diferença entre Dialog e Alert Dialog?', a: 'O Alert Dialog é para confirmações destrutivas: não fecha clicando fora e exige uma escolha explícita. O Dialog serve para todo o resto (formulários, detalhes, conteúdo).' },
+      { q: 'Como controlo a abertura pelo estado?', a: 'Passe `open` e `onOpenChange` ao `Dialog`. Sem eles, o `DialogTrigger` controla a abertura sozinho.' },
+      { q: 'Como uso um botão próprio como gatilho?', a: 'Em vez de `asChild`, use `render`: `<DialogTrigger render={<Button variant="outline" />}>Editar</DialogTrigger>`.' },
+      { q: 'Dialog ou Sheet no mobile?', a: 'Para formulários longos no celular, prefira `Drawer` ou `Sheet`, que aproveitam melhor a altura da tela. O Dialog funciona melhor para conteúdo curto.' },
+    ],
+  },
+  Card: {
+    intro:
+      'O Card agrupa conteúdo relacionado numa superfície com borda: métricas, produtos, perfis, planos, notificações. As variantes combinam `CardHeader`, `CardContent` e `CardFooter` com outros primitivos para os casos mais comuns de dashboards e páginas de marketing.',
+    faq: [
+      { q: 'Quais partes o Card tem?', a: '`Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardAction` (ação no canto do cabeçalho), `CardContent` e `CardFooter`. Todas são opcionais.' },
+      { q: 'Como deixo o card inteiro clicável?', a: 'Coloque um `Link` no título com um pseudo-elemento cobrindo o card (`after:absolute after:inset-0`) e `relative` no Card. Assim o link continua acessível e os botões internos seguem clicáveis com `relative z-10`.' },
+      { q: 'Como faço uma grade de cards responsiva?', a: 'Use `grid gap-4 sm:grid-cols-2 lg:grid-cols-3` no contêiner. Para alturas iguais, os cards já esticam; use `mt-auto` no `CardFooter` para alinhar as ações.' },
+    ],
+  },
+  Table: {
+    intro:
+      'O Table renderiza dados tabulares com marcação semântica (`table`, `thead`, `tbody`) e estilo do tema. As variantes trazem status com Badge, ações por linha, rodapé com totais e rolagem horizontal no mobile.',
+    faq: [
+      { q: 'Table ou Data Table?', a: 'O Table é só a apresentação. Para ordenação, filtros, paginação e seleção, veja a categoria Data Table, que combina o Table com o TanStack Table.' },
+      { q: 'Como evito que a tabela quebre o layout no mobile?', a: 'O primitivo já envolve a tabela num contêiner com `overflow-x-auto`. Use `whitespace-nowrap` nas colunas que não devem quebrar linha.' },
+      { q: 'Como alinho números à direita?', a: 'Aplique `text-right` no `TableHead` e no `TableCell` da coluna, e `tabular-nums` para os dígitos ficarem alinhados.' },
+    ],
+  },
+  Tabs: {
+    intro:
+      'O Tabs alterna entre painéis de conteúdo no mesmo lugar, sem trocar de página. As variantes cobrem abas em linha, pills, verticais, com ícones e com contadores, todas navegáveis pelo teclado com as setas.',
+    faq: [
+      { q: 'Como deixo uma aba aberta por padrão?', a: 'Passe `defaultValue` ao `Tabs` com o `value` da aba. Para controlar pelo estado, use `value` e `onValueChange`.' },
+      { q: 'Como faço abas verticais?', a: 'Use `orientation="vertical"` no `Tabs`; o `TabsList` passa a empilhar os gatilhos e as setas para cima/baixo navegam entre eles.' },
+      { q: 'Tabs servem para navegação entre páginas?', a: 'Para rotas diferentes, prefira links (um Navigation Menu ou uma barra de links com estado ativo). Tabs são para painéis dentro da mesma página.' },
+    ],
+  },
+  Select: {
+    intro:
+      'O Select escolhe uma opção numa lista fechada, com popup posicionado, grupos, separadores e ícones. Para listas grandes ou com busca, combine com o Combobox.',
+    faq: [
+      { q: 'Select, Native Select ou Combobox?', a: 'Use o Select para até umas 15 opções com visual próprio; o Native Select quando quer o seletor do sistema (bom no mobile); e o Combobox quando a lista é longa e precisa de busca.' },
+      { q: 'Como mostro um placeholder?', a: 'Passe `placeholder` ao `SelectValue`; ele aparece enquanto nenhum valor estiver selecionado.' },
+      { q: 'Como uso o Select num formulário?', a: 'Dê um `name` ao `Select` para enviar o valor num `<form>` nativo, ou controle com `value` e `onValueChange` (no React Hook Form, pelo `Controller`).' },
+    ],
+  },
+  Accordion: {
+    intro:
+      'O Accordion empilha seções que abrem e fecham, ideal para FAQ, configurações e listas longas onde só parte do conteúdo importa de cada vez. A animação de altura e a navegação pelo teclado vêm do primitivo.',
+    faq: [
+      { q: 'Como permito várias seções abertas ao mesmo tempo?', a: 'No Base UI, passe `multiple` ao `Accordion`. Sem ele, abrir uma seção fecha a anterior.' },
+      { q: 'Como deixo uma seção aberta por padrão?', a: 'Use `defaultValue` com uma lista dos `value` dos itens, por exemplo `defaultValue={["item-1"]}`.' },
+      { q: 'Accordion ou Collapsible?', a: 'O Collapsible controla uma única área recolhível. O Accordion coordena várias seções e cuida da navegação entre os cabeçalhos.' },
+    ],
+  },
+  Badge: {
+    intro:
+      'O Badge é um rótulo curto para status, categorias, contadores e tags. As variantes usam as cores do tema e combinam ícones, pontos de status e versões removíveis.',
+    faq: [
+      { q: 'Quais variantes o Badge tem?', a: '`default`, `secondary`, `outline`, `destructive`, `ghost` e `link`. Para cores de status (sucesso, aviso), use `className` com tokens ou classes de cor com transparência, como `bg-emerald-500/15 text-emerald-600`.' },
+      { q: 'Como transformo o Badge em link?', a: 'Use `render`: `<Badge render={<Link href="/tags/react" />}>React</Badge>`.' },
+      { q: 'Como coloco um ícone no Badge?', a: 'Coloque o ícone do lucide antes do texto com `data-icon="inline-start"`; o primitivo ajusta o tamanho e o espaçamento.' },
+    ],
+  },
+  Avatar: {
+    intro:
+      'O Avatar mostra a foto de uma pessoa ou marca, com iniciais como fallback enquanto a imagem carrega ou quando ela falha. As variantes incluem tamanhos, indicador de status online e grupos sobrepostos com contador.',
+    faq: [
+      { q: 'O que aparece se a imagem não carregar?', a: 'O `AvatarFallback` (normalmente as iniciais) aparece enquanto a imagem carrega e fica no lugar se ela falhar.' },
+      { q: 'Como faço um grupo de avatares sobrepostos?', a: 'Coloque os avatares num `flex -space-x-2` e dê `ring-2 ring-background` a cada um para separar as bordas. Feche com um avatar de contador (+3).' },
+      { q: 'Como mudo o tamanho?', a: 'Use `size-8`, `size-10` etc. no `Avatar`. Para avatares quadrados, troque o arredondamento com `rounded-lg` no Avatar e na imagem.' },
+    ],
+  },
+  Calendar: {
+    intro:
+      'O Calendar exibe um mês navegável para escolher uma data, um intervalo ou várias datas, construído sobre o react-day-picker com o visual do tema. Para seleção num campo de formulário, veja o Date Picker.',
+    faq: [
+      { q: 'Como seleciono um intervalo de datas?', a: 'Use `mode="range"` com `selected` e `onSelect` tipados como `DateRange`. Com `numberOfMonths={2}`, dois meses ficam lado a lado.' },
+      { q: 'Como deixo o calendário em português?', a: 'Importe `ptBR` de `date-fns/locale` (ou `react-day-picker/locale`) e passe em `locale`. Os nomes de mês e dia da semana mudam junto.' },
+      { q: 'Como desabilito datas passadas?', a: 'Passe `disabled={{ before: new Date() }}`. Também aceita funções e listas de datas.' },
+    ],
+  },
+  Chart: {
+    intro:
+      'O Chart envolve o recharts com `ChartContainer`, tooltip e legenda no estilo do shadcn/ui, e as cores vêm de variáveis CSS (`--chart-1` a `--chart-5`), então os gráficos acompanham o tema claro e escuro. As variantes cobrem área, barras, linha, pizza, radar e radial.',
+    faq: [
+      { q: 'Como defino as cores das séries?', a: 'No `ChartConfig`, cada série recebe `color: "var(--chart-1)"`. Nos elementos do recharts, use `fill="var(--color-<chave>)"`, gerado pelo `ChartContainer`.' },
+      { q: 'Por que meu gráfico não aparece?', a: 'O recharts precisa de altura: dê ao `ChartContainer` uma altura (`h-64`) ou uma proporção (`aspect-video`).' },
+      { q: 'Preciso instalar o recharts?', a: 'Sim. O comando do CLI já instala o `recharts` e o primitivo `chart` do shadcn como dependências do item.' },
+    ],
+  },
+};
+
 const B = (name: string, group: string, description: string, order: number): CategoryDef => ({ kind: 'BLOCK', name, group, description, order });
-const C = (name: string, description: string, order: number): CategoryDef => ({ kind: 'COMPONENT', name, description, order });
+const C = (name: string, description: string, order: number): CategoryDef => ({ kind: 'COMPONENT', name, description, order, ...COMPONENT_DOCS[name] });
 const P = (name: string, group: string, description: string, order: number): CategoryDef => ({ kind: 'PAGE', name, group, description, order });
 const I = (name: string, description: string, order: number): CategoryDef => ({ kind: 'ILLUSTRATION', name, description, order });
 
