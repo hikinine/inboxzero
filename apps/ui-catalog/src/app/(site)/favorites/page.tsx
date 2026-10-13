@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { FavoritesBrowser } from './favorites-browser';
 
+// Dinâmica: depende do banco (sidebar de componentes, aviso do topo); no build do CI não há banco.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Favoritos' };
 
 export default function FavoritesPage() {

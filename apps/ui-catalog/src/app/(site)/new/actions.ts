@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { ItemKind, ItemStatus } from '@prisma/client';
 import { createItem } from '@/lib/mcp/tools';
+import { isAdmin } from '@/lib/admin';
 
 export type NewItemState = { error?: string };
 
@@ -14,6 +15,7 @@ const list = (v: FormDataEntryValue | null) =>
     .filter(Boolean);
 
 export async function createItemAction(_prev: NewItemState, formData: FormData): Promise<NewItemState> {
+  if (!(await isAdmin())) return { error: 'Sem permissão: entre em /admin com o token do catálogo.' };
   const name = String(formData.get('name') ?? '').trim();
   const code = String(formData.get('code') ?? '');
   const kindRaw = String(formData.get('kind') ?? 'BLOCK');

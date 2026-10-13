@@ -16,6 +16,7 @@ import { ItemCard } from '@/components/site/item-card';
 import { FavoriteButton } from '@/components/site/favorite-button';
 import { ItemPreview } from './item-preview';
 import { DeleteItemButton } from './delete-item-button';
+import { isAdmin } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,7 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
   if (!item) notFound();
 
   const meta = kindMeta(item.kind);
+  const admin = await isAdmin();
   const derived = deriveDeps(item.code);
   const deps = [...new Set([...item.dependencies, ...derived.dependencies])];
   const regDeps = [...new Set([...item.registryDependencies, ...derived.registryDependencies])];
@@ -104,16 +106,16 @@ export default async function ItemPage({ params }: { params: Promise<{ slug: str
           <Button variant="outline" size="sm" nativeButton={false} render={<a href={v0Url(item.slug)} target="_blank" rel="noreferrer" />}>
             <ExternalLink /> Abrir no v0
           </Button>
-          <DeleteItemButton id={item.id} name={item.name} backHref={`/${meta.path}`} />
+          {admin && <DeleteItemButton id={item.id} name={item.name} backHref={`/${meta.path}`} />}
         </div>
       </header>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0">
           <ItemPreview slug={item.slug} kind={item.kind} previewHeight={item.previewHeight} codeBlock={<CodeBlock code={item.code} title={`${item.slug}.tsx`} maxHeight={720} />} />
         </div>
 
-        <aside className="space-y-5 text-sm">
+        <aside className="min-w-0 space-y-5 text-sm">
           <div>
             <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Instalar</div>
             <InstallPanel slug={item.slug} prompt={prompt} deps={deps} regDeps={regDeps} v0={v0Url(item.slug)} />

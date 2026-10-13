@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { isAdmin } from '@/lib/admin';
 import { NewItemForm } from './new-item-form';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Novo item' };
 
 export default async function NewItemPage() {
+  if (!(await isAdmin())) redirect('/admin?next=/new');
   const [categories, collections] = await Promise.all([
     prisma.category.findMany({ orderBy: [{ kind: 'asc' }, { order: 'asc' }], select: { kind: true, slug: true, name: true } }),
     prisma.collection.findMany({ orderBy: { name: 'asc' }, select: { slug: true, name: true } }),

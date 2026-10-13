@@ -25,7 +25,7 @@ export default async function CollectionsPage() {
           / <span className="text-foreground">Coleções</span>
         </nav>
         <h1 className="mx-auto max-w-4xl text-3xl font-semibold tracking-tight sm:text-5xl">
-          {collections.length}+ templates e coleções <span className="text-muted-foreground">prontos para compor</span>
+          {collections.length === 1 ? "Templates e coleções" : `${collections.length} templates e coleções`} <span className="text-muted-foreground">prontos para compor</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-muted-foreground sm:text-lg">
           Uma coleção reúne navbar, hero, seções, footer e a página completa de um mesmo projeto — o visual inteiro, instalável bloco a bloco ou de uma vez.

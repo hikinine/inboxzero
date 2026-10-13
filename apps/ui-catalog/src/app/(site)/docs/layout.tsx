@@ -1,5 +1,8 @@
 import { DocsSidebar } from '@/components/site/docs-sidebar';
 
+// Dinâmica: depende do banco (sidebar de componentes, aviso do topo); no build do CI não há banco.
+export const dynamic = 'force-dynamic';
+
 // Layout das docs (estilo shadcnstudio): sidebar fixa à esquerda em lg ("Começando" + componentes);
 // abaixo de lg a sidebar vira uma lista recolhível no topo. A TOC da direita é de cada página.
 export default function DocsLayout({ children }: { children: React.ReactNode }) {

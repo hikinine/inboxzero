@@ -1,7 +1,7 @@
 'use client';
 
 // Busca ⌘K (command palette) — itens, categorias e ações, usando o próprio Command do catálogo.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, BookOpen, Folder, Heart, Plus, Search, Sparkles } from 'lucide-react';
 import type { ItemKind } from '@prisma/client';
@@ -20,6 +20,8 @@ export function SearchCommand({ className }: { className?: string }) {
   const [items, setItems] = useState<ItemMeta[]>([]);
   const [facets, setFacets] = useState<Facets | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
@@ -52,6 +54,13 @@ export function SearchCommand({ className }: { className?: string }) {
     }, 150);
     return () => clearTimeout(t);
   }, [q, open]);
+
+  // Resultados novos: seleciona o primeiro (Enter navega direto) e volta a lista ao topo.
+  useEffect(() => {
+    if (!open) return;
+    setSelected(items[0] ? `item:${items[0].slug}` : q.trim() ? 'search:all' : 'kind:blocks');
+    if (listRef.current) listRef.current.scrollTop = 0;
+  }, [items, open, q]);
 
   const term = q.trim().toLowerCase();
   const categories = useMemo(() => {
@@ -86,9 +95,9 @@ export function SearchCommand({ className }: { className?: string }) {
       </Button>
 
       <CommandDialog open={open} onOpenChange={setOpen} title="Buscar no catálogo" description="Itens, categorias e ações" className="sm:max-w-xl">
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} value={selected} onValueChange={setSelected}>
           <CommandInput value={q} onValueChange={setQ} placeholder="Buscar itens, categorias… (hero, kanban, beam)" />
-          <CommandList>
+          <CommandList ref={listRef}>
             <CommandEmpty>{loading ? 'Buscando…' : 'Nada encontrado.'}</CommandEmpty>
             {items.length > 0 && (
               <CommandGroup heading="Itens">

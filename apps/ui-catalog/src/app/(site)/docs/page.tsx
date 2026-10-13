@@ -7,6 +7,9 @@ import { UI_MODULE_NAMES } from '@/sandbox/generated/ui-module-names';
 import { CodeBlock } from '@/components/site/code-block';
 import { Badge } from '@/components/ui/badge';
 
+// Dinâmica: depende do banco (sidebar de componentes, aviso do topo); no build do CI não há banco.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = { title: 'Docs' };
 
 const MCP_JSON = `{

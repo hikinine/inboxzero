@@ -52,7 +52,7 @@ componente em `src/components/ui`? Rode `pnpm gen-modules`.
   `update_item`, `delete_item`, `check_code`, `list_supported_modules`, `list_categories`,
   `upsert_category` (com `group`), `delete_category` (só vazia), `list_collections`, `list_tags`
 
-> ⚠️ As rotas mutáveis da UI (PATCH/DELETE/bulk) **não têm auth** — ferramenta interna. Só o MCP exige token.
+> Escrita exige o token do catálogo (`UI_CATALOG_MCP_TOKEN`): no MCP e nas APIs como `Authorization: Bearer`, na UI via login em `/admin` (cookie httpOnly). Sem ele, `/new` redireciona para `/admin`, PATCH/DELETE/bulk respondem 401 e o botão Excluir some.
 
 ## Conteúdo
 

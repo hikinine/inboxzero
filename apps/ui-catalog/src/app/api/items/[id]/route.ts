@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { findItem } from '@/lib/items';
 import { deleteItemById, updateItemById } from '@/lib/mcp/tools';
 import { installCommand } from '@/lib/site';
+import { isAuthorizedRequest } from '@/lib/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,7 +35,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 // DELETE /api/items/:id  (id ou slug)
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await isAuthorizedRequest(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   const { id } = await params;
   try {
     return NextResponse.json({ ok: true, ...(await deleteItemById(id)) });
@@ -45,6 +47,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
 // PATCH /api/items/:id — atualização parcial (mesma lógica do MCP update_item).
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await isAuthorizedRequest(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   const { id } = await params;
   let body: unknown;
   try {

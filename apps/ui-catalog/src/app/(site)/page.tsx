@@ -77,7 +77,7 @@ export default async function HomePage() {
             <AvatarGroup>
               {['PS', 'CL', 'CM', 'TK'].map((n) => (
                 <Avatar key={n} size="sm">
-                  <AvatarFallback>{n}</AvatarFallback>
+                  <AvatarFallback className="text-[9px] font-medium">{n}</AvatarFallback>
                 </Avatar>
               ))}
               <AvatarGroupCount>+</AvatarGroupCount>
@@ -120,7 +120,7 @@ export default async function HomePage() {
       <section className="border-t">
         <div className="mx-auto w-full max-w-screen-2xl px-6 lg:px-10 py-20">
           <SectionHead eyebrow="Essenciais" title="Tudo o que você precisa num só lugar." text="Blocos, componentes, páginas e ilustrações feitos com os primitivos do shadcn — temáveis, acessíveis e instaláveis em qualquer stack React." center />
-          <div className="mt-12 grid gap-4 lg:grid-cols-3">
+          <div className="mt-12 grid grid-cols-1 gap-4 lg:grid-cols-3 [&>*]:min-w-0">
             <FeatureCard icon={Layers} title="Funciona com qualquer stack React" text="Next.js, Vite, Remix, Astro… o item é um arquivo TSX que usa só @/components/ui/* e Tailwind v4.">
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {STACKS.map((s) => (

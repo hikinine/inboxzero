@@ -3,6 +3,7 @@ import { ItemStatus } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { slugify } from '@/lib/slug';
+import { isAuthorizedRequest } from '@/lib/admin';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,7 @@ const dedupe = (xs: string[]) => [...new Set(xs.map((x) => x.trim()).filter(Bool
  * setCollection MOVE (um item pertence a uma coleção só); setFeatured/setStatus são diretos.
  */
 export async function POST(req: NextRequest) {
+  if (!(await isAuthorizedRequest(req))) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   let body: unknown;
   try {
     body = await req.json();
