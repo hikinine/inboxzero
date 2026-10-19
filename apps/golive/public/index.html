@@ -78,6 +78,8 @@ let sharer = null       // peer que está compartilhando agora
 let localStream = null  // minha tela, quando eu compartilho
 const peers = new Set() // outros peers na sala
 const pcs = new Map()   // peerId → RTCPeerConnection
+let markReady
+const ready = new Promise((r) => (markReady = r)) // sala conectada (primeiro "hello")
 let viewState = 'idle'  // espectador: idle | connecting | connected | failed
 let retries = 0
 
@@ -103,7 +105,20 @@ function newPc(id) {
   closePc(id)
   const pc = new RTCPeerConnection(FORCE_RELAY ? { ...ICE, iceTransportPolicy: 'relay' } : ICE)
   pc.pending = []
-  pc.onicecandidate = (e) => e.candidate && signal(id, { candidate: e.candidate })
+  // Candidatos em lote: um POST por candidato (em fila) atrasava os de relay, que chegam
+  // por último, e o outro lado desistia antes de recebê-los.
+  let batch = []
+  let timer = null
+  const send = () => {
+    timer = null
+    if (batch.length && pcs.get(id) === pc) signal(id, { candidates: batch })
+    batch = []
+  }
+  pc.onicecandidate = (e) => {
+    if (e.candidate) batch.push(e.candidate)
+    if (!e.candidate) send()
+    else timer ??= setTimeout(send, 60)
+  }
   pcs.set(id, pc)
   return pc
 }
@@ -162,11 +177,13 @@ async function onSignal(from, data) {
     for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
   } else if (data.retry) {
     if (sharer === me) offerTo(from)
-  } else if (data.candidate) {
+  } else if (data.candidates) {
     const pc = pcs.get(from)
     if (!pc) return
-    if (pc.remoteDescription) pc.addIceCandidate(data.candidate).catch(() => {})
-    else pc.pending.push(data.candidate)
+    for (const c of data.candidates) {
+      if (pc.remoteDescription) pc.addIceCandidate(c).catch(() => {})
+      else pc.pending.push(c)
+    }
   }
 }
 
@@ -182,6 +199,7 @@ async function startShare() {
   } catch {
     return
   }
+  await ready // o servidor recusa o "share" de quem ainda não entrou na sala
   localStream.getVideoTracks()[0].contentHint = 'detail'
   localStream.getVideoTracks()[0].addEventListener('ended', stopShare)
   video.srcObject = localStream
@@ -442,6 +460,7 @@ try {
 const es = new EventSource(`/api/${roomId}/events?peer=${me}`)
 es.addEventListener('hello', (e) => {
   const { sharer: s, peers: list } = JSON.parse(e.data)
+  markReady()
   peers.clear()
   for (const p of list) peers.add(p)
   if (localStream) {
