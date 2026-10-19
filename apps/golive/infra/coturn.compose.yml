@@ -1,0 +1,36 @@
+# TURN (coturn) do golive.codehall.io. Credenciais efêmeras via --use-auth-secret:
+# o golive assina user/senha com TURN_SECRET (HMAC-SHA1, padrão TURN REST API).
+# 3479 UDP/TCP direto; TURN/TLS em turn.codehall.io:443 — o Traefik termina o TLS e repassa
+# para 179.236.248.148:3479/tcp (arquivo dinâmico golive-turn.yml no Traefik).
+# A 3478/udp é do LiveKit e 10000-20000/udp do SIP, por isso as portas abaixo.
+services:
+  coturn:
+    image: coturn/coturn:4.6.3
+    restart: unless-stopped
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3479
+      - --min-port=40000
+      - --max-port=40100
+      - --external-ip=179.236.248.148
+      - --realm=turn.codehall.io
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET}
+      - --fingerprint
+      - --no-cli
+      - --no-tls
+      - --no-dtls
+      - --no-multicast-peers
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=100.64.0.0-100.127.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+      - --user-quota=12
+      - --total-quota=200
+    # Rede do host: sem NAT do Docker no caminho do relay (na bridge o retorno ao próprio IP
+    # público chegava com origem reescrita e o coturn descartava). Mesmo padrão do SIP do LiveKit.
+    network_mode: host

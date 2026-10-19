@@ -1,0 +1,14 @@
+# TURN/TLS do golive: turn.codehall.io:443 → coturn (network_mode: host) em 3479/tcp.
+tcp:
+  routers:
+    golive-turn:
+      entryPoints: [websecure]
+      rule: HostSNI(`turn.codehall.io`)
+      service: golive-turn
+      tls:
+        certResolver: letsencrypt
+  services:
+    golive-turn:
+      loadBalancer:
+        servers:
+          - address: 179.236.248.148:3479
