@@ -143,6 +143,13 @@ const server = createServer(async (req, res) => {
           room.sharer = null
           broadcast(room, 'sharer', { sharer: null })
         }
+      } else if (msg.type === 'draw') {
+        // Canetinha: repassa o pedaço do traço pra todo mundo da sala.
+        const pts = Array.isArray(msg.p) ? msg.p.slice(0, 2000) : []
+        if (!Number.isInteger(msg.s) || !pts.every((pt) => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))) {
+          return void res.writeHead(400).end()
+        }
+        broadcast(room, 'draw', { from, s: msg.s, p: pts, end: !!msg.end }, from)
       } else if (msg.type === 'signal') {
         const target = room.peers.get(msg.to)
         if (target) send(target, 'signal', { from, data: msg.data })

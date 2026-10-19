@@ -22,13 +22,18 @@
   button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
   button.danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
   main { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; overflow: hidden; }
-  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
-  video.on { display: block; }
+  #stage { position: absolute; inset: 0; background: #000; display: none; }
+  #stage.on { display: block; }
+  #stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  #ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
+  #stage.pen #ink { pointer-events: auto; cursor: crosshair; }
+  button.active { background: #2a2a31; border-color: #5a5a66; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
   .empty { text-align: center; color: var(--muted); padding: 24px; }
   .empty h1 { color: var(--fg); font-size: 20px; font-weight: 600; margin: 0 0 6px; }
   .empty p { margin: 0 0 18px; }
   .empty button { padding: 11px 18px; font-size: 15px; }
-  .badge { position: absolute; top: 12px; left: 12px; background: rgb(0 0 0 / .6); padding: 4px 10px; border-radius: 999px; font-size: 12px; display: none; }
+  .badge { position: absolute; z-index: 1; top: 12px; left: 12px; background: rgb(0 0 0 / .6); padding: 4px 10px; border-radius: 999px; font-size: 12px; display: none; }
   .hidden { display: none !important; }
   @media (max-width: 560px) { .room, .count { display: none; } }
 </style>
@@ -40,12 +45,17 @@
   <div class="spacer"></div>
   <div class="count" id="count"></div>
   <button id="copy">Copiar link</button>
+  <button id="pen" class="hidden" title="Desenhar na tela (D)"><span class="swatch" id="swatch"></span>Canetinha</button>
+  <button id="pip" class="hidden" title="Mini-janela sempre por cima, com os desenhos">Janela flutuante</button>
   <button id="full" class="hidden">Tela cheia</button>
   <button id="share" class="primary">Compartilhar tela</button>
   <button id="stop" class="danger hidden">Parar</button>
 </header>
 <main>
-  <video id="video" autoplay playsinline muted></video>
+  <div id="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="ink"></canvas>
+  </div>
   <div class="badge" id="badge">Você está compartilhando</div>
   <div class="empty" id="empty">
     <h1>Ninguém está compartilhando</h1>
@@ -62,6 +72,7 @@ let ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.clo
 const FORCE_RELAY = new URLSearchParams(location.search).has('relay')
 const $ = (id) => document.getElementById(id)
 const video = $('video')
+const stage = $('stage') // referência fixa: o stage pode ir pra janela flutuante
 
 let sharer = null       // peer que está compartilhando agora
 let localStream = null  // minha tela, quando eu compartilho
@@ -190,6 +201,8 @@ function stopShare() {
     post({ type: 'unshare' })
   }
   video.srcObject = null
+  pipWin?.close()
+  strokes.clear()
   render()
 }
 
@@ -198,8 +211,13 @@ function render() {
   const live = !!sharer
   const watching = live && !sharingMe && viewState === 'connected'
   $('dot').classList.toggle('live', live)
-  video.classList.toggle('on', sharingMe || watching)
+  stage.classList.toggle('on', sharingMe || watching)
+  $('pen').classList.toggle('hidden', !(sharingMe || watching))
+  $('pip').classList.toggle('hidden', !sharingMe || !('documentPictureInPicture' in window))
+  $('pip').textContent = pipWin ? 'Fechar janela flutuante' : 'Janela flutuante'
+  if (!(sharingMe || watching) && pen) setPen(false)
   $('badge').style.display = sharingMe ? 'block' : 'none'
+  $('badge').textContent = pipWin ? 'Você está compartilhando · tela na janela flutuante' : 'Você está compartilhando'
   $('empty').classList.toggle('hidden', live)
   $('share').classList.toggle('hidden', sharingMe)
   $('share').textContent = live ? 'Assumir tela' : 'Compartilhar tela'
@@ -224,7 +242,9 @@ function setSharer(id) {
   const old = sharer
   sharer = id
   if (old && old !== me) closePc(old)
+  strokes.clear()
   if (old === me && id !== me && localStream) {
+    pipWin?.close()
     // Alguém assumiu: paro de mandar a minha tela.
     for (const t of localStream.getTracks()) t.stop()
     localStream = null
@@ -235,6 +255,182 @@ function setSharer(id) {
     viewState = id ? 'connecting' : 'idle'
     retries = 0
   }
+  render()
+}
+
+// ---- Canetinha: traços em coordenadas 0..1 do vídeo, iguais pra todo mundo; somem sozinhos ----
+const COLORS = ['#ff3b5c', '#ffb020', '#2fe07a', '#36b3ff', '#c07bff', '#ff6fd8', '#ffe14d']
+const colorOf = (id) => COLORS[parseInt(id.slice(-6), 16) % COLORS.length]
+const HOLD = 2500 // ms visível depois de terminar
+const FADE = 700  // ms esmaecendo
+const strokes = new Map() // `${peer}:${n}` → { color, pts: [[x, y]], done: ms | null, seen: ms }
+const ink = $('ink')
+let pen = false
+let mine = null // traço que estou desenhando
+let outbox = []
+let strokeSeq = 0
+let pipWin = null
+let drawing = false
+$('swatch').style.background = colorOf(me)
+
+function setPen(on) {
+  pen = on
+  $('pen').classList.toggle('active', on)
+  stage.classList.toggle('pen', on)
+}
+
+// Área do vídeo dentro do stage (object-fit: contain deixa tarja preta).
+function contentRect() {
+  const W = ink.clientWidth
+  const H = ink.clientHeight
+  if (!video.videoWidth || !W) return null
+  const k = Math.min(W / video.videoWidth, H / video.videoHeight)
+  const w = video.videoWidth * k
+  const h = video.videoHeight * k
+  return { x: (W - w) / 2, y: (H - h) / 2, w, h }
+}
+
+let drawQueue = Promise.resolve()
+function flush(end) {
+  if (!mine || (!outbox.length && !end)) return
+  const body = JSON.stringify({ from: me, type: 'draw', s: mine.n, p: outbox, end: !!end })
+  outbox = []
+  drawQueue = drawQueue.then(() =>
+    fetch(`/api/${roomId}/signal`, { method: 'POST', headers: { 'content-type': 'application/json' }, body }).catch(() => {}),
+  )
+}
+setInterval(() => flush(false), 40)
+
+function addPoint(e) {
+  const r = contentRect()
+  if (!r || !mine) return
+  const pt = [+((e.offsetX - r.x) / r.w).toFixed(4), +((e.offsetY - r.y) / r.h).toFixed(4)]
+  mine.stroke.pts.push(pt)
+  mine.stroke.seen = performance.now()
+  outbox.push(pt)
+  kick()
+}
+
+ink.addEventListener('pointerdown', (e) => {
+  if (!pen || e.button !== 0) return
+  e.preventDefault()
+  ink.setPointerCapture(e.pointerId)
+  const n = ++strokeSeq
+  const stroke = { color: colorOf(me), pts: [], done: null, seen: performance.now() }
+  strokes.set(`${me}:${n}`, stroke)
+  mine = { n, stroke }
+  addPoint(e)
+})
+ink.addEventListener('pointermove', (e) => {
+  if (!mine) return
+  for (const ev of e.getCoalescedEvents?.() ?? [e]) addPoint(ev)
+})
+const endStroke = () => {
+  if (!mine) return
+  mine.stroke.done = performance.now()
+  flush(true)
+  mine = null
+  kick()
+}
+ink.addEventListener('pointerup', endStroke)
+ink.addEventListener('pointercancel', endStroke)
+
+function onDraw({ from, s, p, end }) {
+  if (from === me) return
+  const key = `${from}:${s}`
+  let stroke = strokes.get(key)
+  if (!stroke) {
+    stroke = { color: colorOf(from), pts: [], done: null, seen: 0 }
+    strokes.set(key, stroke)
+  }
+  stroke.pts.push(...p)
+  stroke.seen = performance.now()
+  if (end) stroke.done = stroke.seen
+  kick()
+}
+
+// Loop de desenho no window onde o stage está (a janela flutuante continua animando
+// mesmo com a aba principal em segundo plano).
+function kick() {
+  if (drawing) return
+  drawing = true
+  ;(ink.ownerDocument.defaultView ?? window).requestAnimationFrame(paint)
+}
+
+function paint() {
+  const win = ink.ownerDocument.defaultView ?? window
+  const dpr = win.devicePixelRatio || 1
+  const W = Math.round(ink.clientWidth * dpr)
+  const H = Math.round(ink.clientHeight * dpr)
+  if (ink.width !== W || ink.height !== H) {
+    ink.width = W
+    ink.height = H
+  }
+  const ctx = ink.getContext('2d')
+  ctx.clearRect(0, 0, W, H)
+  const r = contentRect()
+  const now = performance.now()
+  for (const [key, st] of strokes) {
+    // Traço remoto sem "fim" (pacote perdido) também expira.
+    const done = st.done ?? (now - st.seen > 4000 ? st.seen : null)
+    const alpha = done == null ? 1 : 1 - Math.max(0, now - done - HOLD) / FADE
+    if (alpha <= 0) {
+      strokes.delete(key)
+      continue
+    }
+    if (!r || !st.pts.length) continue
+    const X = (x) => (r.x + x * r.w) * dpr
+    const Y = (y) => (r.y + y * r.h) * dpr
+    ctx.globalAlpha = alpha
+    ctx.strokeStyle = ctx.fillStyle = st.color
+    ctx.lineWidth = Math.max(4, r.w / 180) * dpr
+    ctx.lineCap = ctx.lineJoin = 'round'
+    ctx.shadowColor = 'rgb(0 0 0 / .45)'
+    ctx.shadowBlur = 4 * dpr
+    ctx.beginPath()
+    if (st.pts.length === 1) {
+      ctx.arc(X(st.pts[0][0]), Y(st.pts[0][1]), ctx.lineWidth / 2, 0, Math.PI * 2)
+      ctx.fill()
+      continue
+    }
+    // Curvas pelos pontos médios: traço liso mesmo com poucos pontos.
+    ctx.moveTo(X(st.pts[0][0]), Y(st.pts[0][1]))
+    for (let i = 1; i < st.pts.length - 1; i++) {
+      const [x0, y0] = st.pts[i]
+      const [x1, y1] = st.pts[i + 1]
+      ctx.quadraticCurveTo(X(x0), Y(y0), X((x0 + x1) / 2), Y((y0 + y1) / 2))
+    }
+    const last = st.pts[st.pts.length - 1]
+    ctx.lineTo(X(last[0]), Y(last[1]))
+    ctx.stroke()
+  }
+  ctx.globalAlpha = 1
+  drawing = false
+  if (strokes.size) kick()
+}
+new ResizeObserver(kick).observe(ink)
+
+// Janela flutuante (Document Picture-in-Picture): quem compartilha vê a própria tela com
+// os desenhos por cima de qualquer app. O stage inteiro (vídeo + canvas) muda de janela.
+async function togglePip() {
+  if (pipWin) return pipWin.close()
+  const r = video.videoWidth ? video.videoHeight / video.videoWidth : 9 / 16
+  pipWin = await documentPictureInPicture.requestWindow({ width: 640, height: Math.round(640 * r) })
+  for (const st of document.querySelectorAll('style')) pipWin.document.head.append(st.cloneNode(true))
+  pipWin.document.title = 'golive'
+  pipWin.document.body.append(stage)
+  video.play().catch(() => {})
+  pipWin.addEventListener('pagehide', () => {
+    document.querySelector('main').prepend(stage)
+    video.play().catch(() => {})
+    pipWin = null
+    drawing = false
+    kick()
+    render()
+  })
+  pipWin.addEventListener('keydown', (e) => e.key === 'd' && setPen(!pen))
+  drawing = false
+  kick()
   render()
 }
 
@@ -272,6 +468,7 @@ es.addEventListener('leave', (e) => {
   render()
 })
 es.addEventListener('sharer', (e) => setSharer(JSON.parse(e.data).sharer))
+es.addEventListener('draw', (e) => onDraw(JSON.parse(e.data)))
 es.addEventListener('signal', (e) => {
   const { from, data } = JSON.parse(e.data)
   onSignal(from, data).catch(console.error)
@@ -280,13 +477,20 @@ es.addEventListener('signal', (e) => {
 $('share').onclick = startShare
 $('share2').onclick = startShare
 $('stop').onclick = stopShare
-$('full').onclick = () => video.requestFullscreen?.()
+$('full').onclick = () => stage.requestFullscreen?.()
+$('pen').onclick = () => setPen(!pen)
+$('pip').onclick = togglePip
+addEventListener('keydown', (e) => {
+  if (e.target.closest?.('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return
+  if (e.key === 'd' && !$('pen').classList.contains('hidden')) setPen(!pen)
+  if (e.key === 'Escape' && pen) setPen(false)
+})
 $('copy').onclick = async () => {
   await navigator.clipboard.writeText(location.href).catch(() => {})
   $('copy').textContent = 'Copiado!'
   setTimeout(() => ($('copy').textContent = 'Copiar link'), 1500)
 }
-video.ondblclick = () => (document.fullscreenElement ? document.exitFullscreen() : video.requestFullscreen?.())
+stage.ondblclick = () => !pen && (document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen?.())
 if (!navigator.mediaDevices?.getDisplayMedia) $('share').disabled = $('share2').disabled = true
 render()
 </script>
