@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>golive</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='9' fill='%23ef4444'/></svg>">
+<style>
+  :root { color-scheme: dark; --bg: #0b0b0d; --fg: #ededed; --muted: #8a8a93; --line: #222228; --chip: #16161a; --red: #ef4444; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 14px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  .brand { font-weight: 600; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--red); box-shadow: 0 0 0 4px rgb(239 68 68 / .2); }
+  .room { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spacer { flex: 1; }
+  .count { color: var(--muted); white-space: nowrap; }
+  button { font: inherit; color: var(--fg); background: var(--chip); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: #3a3a42; }
+  button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
+  button.danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+  main { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; overflow: hidden; }
+  video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
+  video.on { display: block; }
+  .empty { text-align: center; color: var(--muted); padding: 24px; }
+  .empty h1 { color: var(--fg); font-size: 20px; font-weight: 600; margin: 0 0 6px; }
+  .empty p { margin: 0 0 18px; }
+  .empty button { padding: 11px 18px; font-size: 15px; }
+  .badge { position: absolute; top: 12px; left: 12px; background: rgb(0 0 0 / .6); padding: 4px 10px; border-radius: 999px; font-size: 12px; display: none; }
+  .hidden { display: none !important; }
+  @media (max-width: 560px) { .room, .count { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot" id="dot"></span>golive</div>
+  <div class="room" id="room"></div>
+  <div class="spacer"></div>
+  <div class="count" id="count"></div>
+  <button id="copy">Copiar link</button>
+  <button id="full" class="hidden">Tela cheia</button>
+  <button id="share" class="primary">Compartilhar tela</button>
+  <button id="stop" class="danger hidden">Parar</button>
+</header>
+<main>
+  <video id="video" autoplay playsinline muted></video>
+  <div class="badge" id="badge">Você está compartilhando</div>
+  <div class="empty" id="empty">
+    <h1>Ninguém está compartilhando</h1>
+    <p>Mande o link da sala e clique para mostrar sua tela.</p>
+    <button class="primary" id="share2">Compartilhar tela</button>
+  </div>
+</main>
+<script>
+const roomId = location.pathname.slice(1)
+const me = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('')
+const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] }
+const $ = (id) => document.getElementById(id)
+const video = $('video')
+
+let sharer = null       // peer que está compartilhando agora
+let localStream = null  // minha tela, quando eu compartilho
+const peers = new Set() // outros peers na sala
+const pcs = new Map()   // peerId → RTCPeerConnection
+
+$('room').textContent = roomId
+document.title = `golive · ${roomId}`
+
+// POSTs em fila, para a ordem offer → candidates chegar intacta.
+let queue = Promise.resolve()
+function post(body) {
+  queue = queue.then(() =>
+    fetch(`/api/${roomId}/signal`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ from: me, ...body }) }).catch(() => {}),
+  )
+  return queue
+}
+const signal = (to, data) => post({ type: 'signal', to, data })
+
+function closePc(id) {
+  pcs.get(id)?.close()
+  pcs.delete(id)
+}
+
+function newPc(id) {
+  closePc(id)
+  const pc = new RTCPeerConnection(ICE)
+  pc.pending = []
+  pc.onicecandidate = (e) => e.candidate && signal(id, { candidate: e.candidate })
+  pcs.set(id, pc)
+  return pc
+}
+
+// Quem compartilha cria uma conexão por espectador e manda a oferta.
+async function offerTo(id) {
+  if (!localStream) return
+  const pc = newPc(id)
+  for (const track of localStream.getTracks()) pc.addTrack(track, localStream)
+  for (const t of pc.getTransceivers()) {
+    const codecs = RTCRtpSender.getCapabilities?.('video')?.codecs
+    if (codecs && t.setCodecPreferences) {
+      // Prioriza VP9/AV1 (melhores pra texto de tela), sem remover os demais.
+      const rank = (c) => (/av1|vp9/i.test(c.mimeType) ? 0 : 1)
+      try { t.setCodecPreferences([...codecs].sort((a, b) => rank(a) - rank(b))) } catch {}
+    }
+  }
+  const sender = pc.getSenders().find((s) => s.track?.kind === 'video')
+  if (sender) {
+    const p = sender.getParameters()
+    p.degradationPreference = 'maintain-resolution'
+    p.encodings = p.encodings?.length ? p.encodings : [{}]
+    p.encodings[0].maxBitrate = 4_000_000
+    sender.setParameters(p).catch(() => {})
+  }
+  await pc.setLocalDescription(await pc.createOffer())
+  signal(id, { sdp: pc.localDescription })
+}
+
+async function onSignal(from, data) {
+  if (data.sdp?.type === 'offer') {
+    if (from !== sharer) return
+    const pc = newPc(from)
+    pc.ontrack = (e) => showStream(e.streams[0] ?? new MediaStream([e.track]))
+    pc.onconnectionstatechange = () => pc.connectionState === 'failed' && render()
+    await pc.setRemoteDescription(data.sdp)
+    await pc.setLocalDescription(await pc.createAnswer())
+    signal(from, { sdp: pc.localDescription })
+    for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
+  } else if (data.sdp?.type === 'answer') {
+    const pc = pcs.get(from)
+    if (!pc) return
+    await pc.setRemoteDescription(data.sdp)
+    for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
+  } else if (data.candidate) {
+    const pc = pcs.get(from)
+    if (!pc) return
+    if (pc.remoteDescription) pc.addIceCandidate(data.candidate).catch(() => {})
+    else pc.pending.push(data.candidate)
+  }
+}
+
+function showStream(stream) {
+  video.srcObject = stream
+  video.play().catch(() => {})
+  render()
+}
+
+async function startShare() {
+  try {
+    localStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false })
+  } catch {
+    return
+  }
+  localStream.getVideoTracks()[0].contentHint = 'detail'
+  localStream.getVideoTracks()[0].addEventListener('ended', stopShare)
+  video.srcObject = localStream
+  sharer = me
+  await post({ type: 'share' })
+  for (const id of peers) offerTo(id)
+  render()
+}
+
+function stopShare() {
+  if (!localStream) return
+  for (const t of localStream.getTracks()) t.stop()
+  localStream = null
+  for (const id of [...pcs.keys()]) closePc(id)
+  if (sharer === me) {
+    sharer = null
+    post({ type: 'unshare' })
+  }
+  video.srcObject = null
+  render()
+}
+
+function render() {
+  const sharingMe = sharer === me && !!localStream
+  const live = !!sharer
+  const watching = live && !sharingMe && !!video.srcObject
+  $('dot').classList.toggle('live', live)
+  video.classList.toggle('on', sharingMe || watching)
+  $('badge').style.display = sharingMe ? 'block' : 'none'
+  $('empty').classList.toggle('hidden', live)
+  $('share').classList.toggle('hidden', sharingMe)
+  $('share').textContent = live ? 'Assumir tela' : 'Compartilhar tela'
+  $('stop').classList.toggle('hidden', !sharingMe)
+  $('full').classList.toggle('hidden', !watching)
+  const n = peers.size + 1
+  $('count').textContent = `${n} na sala`
+  if (live && !sharingMe && !watching) {
+    $('empty').classList.remove('hidden')
+    $('empty').querySelector('h1').textContent = 'Conectando à tela…'
+    $('empty').querySelector('p').textContent = ''
+    $('share2').classList.add('hidden')
+  } else {
+    $('empty').querySelector('h1').textContent = 'Ninguém está compartilhando'
+    $('empty').querySelector('p').textContent = 'Mande o link da sala e clique para mostrar sua tela.'
+    $('share2').classList.remove('hidden')
+  }
+}
+
+function setSharer(id) {
+  if (id === sharer) return
+  const old = sharer
+  sharer = id
+  if (old && old !== me) closePc(old)
+  if (old === me && id !== me && localStream) {
+    // Alguém assumiu: paro de mandar a minha tela.
+    for (const t of localStream.getTracks()) t.stop()
+    localStream = null
+    for (const p of [...pcs.keys()]) closePc(p)
+  }
+  if (id !== me) video.srcObject = null
+  render()
+}
+
+const es = new EventSource(`/api/${roomId}/events?peer=${me}`)
+es.addEventListener('hello', (e) => {
+  const { sharer: s, peers: list } = JSON.parse(e.data)
+  peers.clear()
+  for (const p of list) peers.add(p)
+  if (localStream) {
+    // Reconectei enquanto compartilhava: retomo a tela.
+    sharer = me
+    post({ type: 'share' })
+    for (const id of peers) offerTo(id)
+  } else {
+    sharer = null
+    setSharer(s)
+  }
+  render()
+})
+es.addEventListener('join', (e) => {
+  const { peer } = JSON.parse(e.data)
+  peers.add(peer)
+  if (sharer === me) offerTo(peer)
+  render()
+})
+es.addEventListener('leave', (e) => {
+  const { peer } = JSON.parse(e.data)
+  peers.delete(peer)
+  closePc(peer)
+  render()
+})
+es.addEventListener('sharer', (e) => setSharer(JSON.parse(e.data).sharer))
+es.addEventListener('signal', (e) => {
+  const { from, data } = JSON.parse(e.data)
+  onSignal(from, data).catch(console.error)
+})
+
+$('share').onclick = startShare
+$('share2').onclick = startShare
+$('stop').onclick = stopShare
+$('full').onclick = () => video.requestFullscreen?.()
+$('copy').onclick = async () => {
+  await navigator.clipboard.writeText(location.href).catch(() => {})
+  $('copy').textContent = 'Copiado!'
+  setTimeout(() => ($('copy').textContent = 'Copiar link'), 1500)
+}
+video.ondblclick = () => (document.fullscreenElement ? document.exitFullscreen() : video.requestFullscreen?.())
+if (!navigator.mediaDevices?.getDisplayMedia) $('share').disabled = $('share2').disabled = true
+render()
+</script>
+</body>
+</html>
