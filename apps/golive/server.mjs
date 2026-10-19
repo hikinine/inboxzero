@@ -1,7 +1,7 @@
 // golive — compartilhamento de tela por sala, sem login.
 // Mídia vai P2P via WebRTC; este servidor só serve a página e faz a sinalização
 // (SSE para receber, POST para enviar). Estado só em memória.
-import { createHmac } from 'node:crypto'
+import { createHmac, randomBytes } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { join } from 'node:path'
@@ -18,7 +18,8 @@ const STUN = { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:
 
 function iceServers() {
   if (!TURN_SECRET || !TURN_HOST) return { iceServers: [STUN] }
-  const username = `${Math.floor(Date.now() / 1000) + 12 * 3600}:golive`
+  // Usuário único por pessoa: a cota do coturn (--user-quota) vale por usuário.
+  const username = `${Math.floor(Date.now() / 1000) + 12 * 3600}:${randomBytes(6).toString('hex')}`
   const credential = createHmac('sha1', TURN_SECRET).update(username).digest('base64')
   const urls = [`turn:${TURN_HOST}:3479?transport=udp`, `turn:${TURN_HOST}:3479?transport=tcp`, `turns:${TURN_HOST}:443?transport=tcp`]
   return { iceServers: [STUN, { urls, username, credential }] }

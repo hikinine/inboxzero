@@ -29,8 +29,10 @@ services:
       - --denied-peer-ip=169.254.0.0-169.254.255.255
       - --denied-peer-ip=172.16.0.0-172.31.255.255
       - --denied-peer-ip=192.168.0.0-192.168.255.255
-      - --user-quota=12
-      - --total-quota=200
+      # Cotas de alocação: o Chrome abre ~6 por conexão (3 transportes × interfaces) e quem
+      # compartilha tem uma conexão por espectador; 200 no total esgotava (erro 486).
+      - --user-quota=100
+      - --total-quota=3000
     # Rede do host: sem NAT do Docker no caminho do relay (na bridge o retorno ao próprio IP
     # público chegava com origem reescrita e o coturn descartava). Mesmo padrão do SIP do LiveKit.
     network_mode: host
