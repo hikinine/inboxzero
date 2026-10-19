@@ -1,6 +1,7 @@
 // golive — compartilhamento de tela por sala, sem login.
 // Mídia vai P2P via WebRTC; este servidor só serve a página e faz a sinalização
 // (SSE para receber, POST para enviar). Estado só em memória.
+import { createHmac } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { join } from 'node:path'
@@ -10,6 +11,18 @@ const HOST = process.env.HOSTNAME ?? '0.0.0.0'
 const PUBLIC = join(import.meta.dirname, 'public')
 const ROOM_RE = /^[a-z0-9]{2,16}(-[a-z0-9]{2,16}){0,4}$/
 const PEER_RE = /^[a-zA-Z0-9]{8,40}$/
+// TURN (coturn com --use-auth-secret): credencial = HMAC-SHA1(TURN_SECRET, "<expira>:golive").
+const TURN_SECRET = process.env.TURN_SECRET
+const TURN_HOST = process.env.TURN_HOST
+const STUN = { urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }
+
+function iceServers() {
+  if (!TURN_SECRET || !TURN_HOST) return { iceServers: [STUN] }
+  const username = `${Math.floor(Date.now() / 1000) + 12 * 3600}:golive`
+  const credential = createHmac('sha1', TURN_SECRET).update(username).digest('base64')
+  const urls = [`turn:${TURN_HOST}:3479?transport=udp`, `turn:${TURN_HOST}:3479?transport=tcp`, `turns:${TURN_HOST}:443?transport=tcp`]
+  return { iceServers: [STUN, { urls, username, credential }] }
+}
 
 /** @type {Map<string, { sharer: string | null, peers: Map<string, import('node:http').ServerResponse> }>} */
 const rooms = new Map()
@@ -57,6 +70,11 @@ const server = createServer(async (req, res) => {
 
   if (url.pathname === '/health') {
     res.writeHead(200, { 'content-type': 'text/plain' }).end('ok')
+    return
+  }
+
+  if (url.pathname === '/api/ice') {
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }).end(JSON.stringify(iceServers()))
     return
   }
 

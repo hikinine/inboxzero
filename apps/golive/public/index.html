@@ -53,10 +53,13 @@
     <button class="primary" id="share2">Compartilhar tela</button>
   </div>
 </main>
-<script>
+<script type="module">
 const roomId = location.pathname.slice(1)
 const me = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, '0')).join('')
-const ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] }
+// STUN de reserva; o servidor devolve STUN + TURN (credencial temporária) em /api/ice.
+// ?relay=1 força tudo pelo TURN (diagnóstico).
+let ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] }
+const FORCE_RELAY = new URLSearchParams(location.search).has('relay')
 const $ = (id) => document.getElementById(id)
 const video = $('video')
 
@@ -64,6 +67,8 @@ let sharer = null       // peer que está compartilhando agora
 let localStream = null  // minha tela, quando eu compartilho
 const peers = new Set() // outros peers na sala
 const pcs = new Map()   // peerId → RTCPeerConnection
+let viewState = 'idle'  // espectador: idle | connecting | connected | failed
+let retries = 0
 
 $('room').textContent = roomId
 document.title = `golive · ${roomId}`
@@ -85,7 +90,7 @@ function closePc(id) {
 
 function newPc(id) {
   closePc(id)
-  const pc = new RTCPeerConnection(ICE)
+  const pc = new RTCPeerConnection(FORCE_RELAY ? { ...ICE, iceTransportPolicy: 'relay' } : ICE)
   pc.pending = []
   pc.onicecandidate = (e) => e.candidate && signal(id, { candidate: e.candidate })
   pcs.set(id, pc)
@@ -121,8 +126,20 @@ async function onSignal(from, data) {
   if (data.sdp?.type === 'offer') {
     if (from !== sharer) return
     const pc = newPc(from)
+    viewState = 'connecting'
     pc.ontrack = (e) => showStream(e.streams[0] ?? new MediaStream([e.track]))
-    pc.onconnectionstatechange = () => pc.connectionState === 'failed' && render()
+    pc.onconnectionstatechange = () => {
+      if (pcs.get(from) !== pc) return
+      if (pc.connectionState === 'connected') {
+        viewState = 'connected'
+        retries = 0
+      } else if (pc.connectionState === 'failed') {
+        // Pede uma nova oferta a quem compartilha (algumas tentativas, com espera crescente).
+        viewState = 'failed'
+        if (retries < 5) setTimeout(() => sharer === from && signal(from, { retry: true }), 1000 * ++retries)
+      }
+      render()
+    }
     await pc.setRemoteDescription(data.sdp)
     await pc.setLocalDescription(await pc.createAnswer())
     signal(from, { sdp: pc.localDescription })
@@ -132,6 +149,8 @@ async function onSignal(from, data) {
     if (!pc) return
     await pc.setRemoteDescription(data.sdp)
     for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
+  } else if (data.retry) {
+    if (sharer === me) offerTo(from)
   } else if (data.candidate) {
     const pc = pcs.get(from)
     if (!pc) return
@@ -177,7 +196,7 @@ function stopShare() {
 function render() {
   const sharingMe = sharer === me && !!localStream
   const live = !!sharer
-  const watching = live && !sharingMe && !!video.srcObject
+  const watching = live && !sharingMe && viewState === 'connected'
   $('dot').classList.toggle('live', live)
   video.classList.toggle('on', sharingMe || watching)
   $('badge').style.display = sharingMe ? 'block' : 'none'
@@ -190,8 +209,8 @@ function render() {
   $('count').textContent = `${n} na sala`
   if (live && !sharingMe && !watching) {
     $('empty').classList.remove('hidden')
-    $('empty').querySelector('h1').textContent = 'Conectando à tela…'
-    $('empty').querySelector('p').textContent = ''
+    $('empty').querySelector('h1').textContent = viewState === 'failed' ? 'Não deu para conectar' : 'Conectando à tela…'
+    $('empty').querySelector('p').textContent = viewState === 'failed' ? (retries < 5 ? 'Tentando de novo…' : 'Recarregue a página para tentar outra vez.') : ''
     $('share2').classList.add('hidden')
   } else {
     $('empty').querySelector('h1').textContent = 'Ninguém está compartilhando'
@@ -211,9 +230,18 @@ function setSharer(id) {
     localStream = null
     for (const p of [...pcs.keys()]) closePc(p)
   }
-  if (id !== me) video.srcObject = null
+  if (id !== me) {
+    video.srcObject = null
+    viewState = id ? 'connecting' : 'idle'
+    retries = 0
+  }
   render()
 }
+
+try {
+  const r = await fetch('/api/ice')
+  if (r.ok) ICE = await r.json()
+} catch {}
 
 const es = new EventSource(`/api/${roomId}/events?peer=${me}`)
 es.addEventListener('hello', (e) => {
