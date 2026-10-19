@@ -308,14 +308,34 @@ function contentRect() {
   return { x: (W - w) / 2, y: (H - h) / 2, w, h }
 }
 
-let drawQueue = Promise.resolve()
+// Um envio por vez levando tudo o que acumulou: o atraso fica em ~1 viagem ao servidor,
+// em vez de crescer com uma fila de POSTs enquanto a pessoa desenha.
+let sending = false
+let sendQueue = [] // pedaços { s, p, end } ainda não enviados
 function flush(end) {
-  if (!mine || (!outbox.length && !end)) return
-  const body = JSON.stringify({ from: me, type: 'draw', s: mine.n, p: outbox, end: !!end })
-  outbox = []
-  drawQueue = drawQueue.then(() =>
-    fetch(`/api/${roomId}/signal`, { method: 'POST', headers: { 'content-type': 'application/json' }, body }).catch(() => {}),
-  )
+  if (mine && (outbox.length || end)) {
+    sendQueue.push({ s: mine.n, p: outbox, end: !!end })
+    outbox = []
+  }
+  if (sending || !sendQueue.length) return
+  sending = true
+  // Junta pedaços consecutivos do mesmo traço numa mensagem só.
+  const batch = []
+  for (const part of sendQueue.splice(0)) {
+    const last = batch.at(-1)
+    if (last && last.s === part.s && !last.end) {
+      last.p = last.p.concat(part.p)
+      last.end = part.end
+    } else batch.push({ ...part })
+  }
+  Promise.all(
+    batch.map((part) =>
+      fetch(`/api/${roomId}/signal`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ from: me, type: 'draw', ...part }) }).catch(() => {}),
+    ),
+  ).finally(() => {
+    sending = false
+    flush(false)
+  })
 }
 setInterval(() => flush(false), 40)
 
