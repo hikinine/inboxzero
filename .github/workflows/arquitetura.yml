@@ -1,0 +1,90 @@
+name: Arquitetura — Build & Deploy
+
+# Push na main que mexa no arquitetura → next build no runner, empacota o standalone (apps/arquitetura/Dockerfile), publica no
+# ghcr.io e dispara o deploy no Dokploy (cloud.codehall.io) pelo webhook do app.
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/arquitetura/**
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - .github/workflows/arquitetura.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: arquitetura-deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build do Next FORA do Docker: pnpm store e .next/cache persistem entre runs (actions/cache),
+      # e a imagem só copia o standalone. Bem mais rápido que buildar dentro do Dockerfile.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Cache do Next (.next/cache)
+        uses: actions/cache@v4
+        with:
+          path: apps/arquitetura/.next/cache
+          key: arquitetura-next-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/arquitetura/src/**', 'apps/arquitetura/scripts/**') }}
+          restore-keys: |
+            arquitetura-next-${{ hashFiles('pnpm-lock.yaml') }}-
+            arquitetura-next-
+
+      # --no-frozen-lockfile: o pnpm-lock.yaml é do monorepo inteiro e às vezes fica fora de
+      # sincronia com outros apps; as versões do arquitetura seguem as do lock.
+      - name: Install
+        run: pnpm install --no-frozen-lockfile --filter @tasky/arquitetura...
+
+      - name: Build
+        env:
+          # NEXT_PUBLIC_* é inlinado no build.
+          NEXT_PUBLIC_SITE_URL: https://arquitetura.codehall.io
+          NEXT_TELEMETRY_DISABLED: 1
+        run: pnpm --filter @tasky/arquitetura build
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/arquitetura
+          file: apps/arquitetura/Dockerfile
+          # O host do Dokploy é amd64 (igual ao runner — o engine do Prisma sai do build já certo).
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/hikinine/arquitetura:production
+            ghcr.io/hikinine/arquitetura:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          # Só a camada base (apt + prisma CLI) vale cachear; o resto muda a cada deploy.
+          cache-from: type=gha,scope=arquitetura-runtime
+          cache-to: type=gha,mode=min,scope=arquitetura-runtime
+
+      - name: Deploy no Dokploy
+        env:
+          WEBHOOK: ${{ secrets.DOKPLOY_ARQUITETURA_WEBHOOK }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::DOKPLOY_ARQUITETURA_WEBHOOK não configurado — a imagem subiu, mas o deploy não foi disparado."
+            exit 0
+          fi
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 10 -X POST "$WEBHOOK"

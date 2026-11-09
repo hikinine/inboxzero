@@ -1,0 +1,63 @@
+// Arquitetura (arquitetura.codehall.io): chat que monta maquetes 3D de casas a partir de planta, fotos e medidas.
+// Migrations do monorepo são problemáticas (shadow DB); use `prisma db push` (o entrypoint da imagem roda).
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" p/ dev local; "debian-openssl-3.0.x" p/ a imagem de produção (node:22-bookworm-slim).
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ARQUITETURA_DATABASE_URL")
+}
+
+model Project {
+  id              String       @id @default(cuid())
+  title           String       @default("Novo projeto")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  // Trava de geração: uma resposta por vez por projeto. Travas mais velhas que 25 min são ignoradas.
+  generatingSince DateTime?
+  messages        Message[]
+  attachments     Attachment[]
+  mockups         Mockup[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  role      String // "user" | "assistant"
+  // Blocos guardados (ver src/lib/blocks.ts): texto, referência a anexo e referência a versão de maquete.
+  // O HTML da maquete nunca fica na mensagem do assistente; ele vira o bloco `mockup` com a versão.
+  blocks    Json
+  createdAt DateTime @default(now())
+
+  @@index([projectId, createdAt])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  mediaType String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model Mockup {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  version   Int
+  // Link público (/m/<slug>) para abrir ou compartilhar a maquete.
+  slug      String   @unique
+  html      String
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, version])
+}
