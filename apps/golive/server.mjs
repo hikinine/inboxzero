@@ -25,7 +25,9 @@ function iceServers() {
   return { iceServers: [STUN, { urls, username, credential }] }
 }
 
-/** @type {Map<string, { sharer: string | null, peers: Map<string, import('node:http').ServerResponse> }>} */
+// Até MAX_SHARERS pessoas compartilham ao mesmo tempo; a próxima substitui quem está há mais tempo.
+const MAX_SHARERS = 2
+/** @type {Map<string, { sharers: string[], peers: Map<string, import('node:http').ServerResponse> }>} */
 const rooms = new Map()
 
 const indexHtml = await readFile(join(PUBLIC, 'index.html'))
@@ -48,9 +50,9 @@ function leave(roomId, peerId) {
   const room = rooms.get(roomId)
   if (!room) return
   room.peers.delete(peerId)
-  if (room.sharer === peerId) {
-    room.sharer = null
-    broadcast(room, 'sharer', { sharer: null })
+  if (room.sharers.includes(peerId)) {
+    room.sharers = room.sharers.filter((p) => p !== peerId)
+    broadcast(room, 'sharers', { sharers: room.sharers })
   }
   broadcast(room, 'leave', { peer: peerId })
   if (room.peers.size === 0) rooms.delete(roomId)
@@ -100,7 +102,7 @@ const server = createServer(async (req, res) => {
 
       let room = rooms.get(roomId)
       if (!room) {
-        room = { sharer: null, peers: new Map() }
+        room = { sharers: [], peers: new Map() }
         rooms.set(roomId, room)
       }
       // Reconexão do mesmo peer: troca a conexão antiga sem anunciar saída.
@@ -114,7 +116,7 @@ const server = createServer(async (req, res) => {
       })
       res.flushHeaders()
       room.peers.set(peerId, res)
-      send(res, 'hello', { sharer: room.sharer, peers: [...room.peers.keys()].filter((p) => p !== peerId) })
+      send(res, 'hello', { sharers: room.sharers, peers: [...room.peers.keys()].filter((p) => p !== peerId) })
       broadcast(room, 'join', { peer: peerId }, peerId)
 
       const ping = setInterval(() => res.write(': ping\n\n'), 20_000)
@@ -137,20 +139,27 @@ const server = createServer(async (req, res) => {
       if (!room || typeof from !== 'string' || !room.peers.has(from)) return void res.writeHead(409).end()
 
       if (msg.type === 'share') {
-        room.sharer = from
-        broadcast(room, 'sharer', { sharer: from })
+        if (!room.sharers.includes(from)) {
+          room.sharers = [...room.sharers, from].slice(-MAX_SHARERS)
+        }
+        broadcast(room, 'sharers', { sharers: room.sharers })
       } else if (msg.type === 'unshare') {
-        if (room.sharer === from) {
-          room.sharer = null
-          broadcast(room, 'sharer', { sharer: null })
+        if (room.sharers.includes(from)) {
+          room.sharers = room.sharers.filter((p) => p !== from)
+          broadcast(room, 'sharers', { sharers: room.sharers })
         }
       } else if (msg.type === 'draw') {
-        // Canetinha: repassa o pedaço do traço pra todo mundo da sala.
+        // Canetinha: repassa o pedaço do traço (desenhado sobre a tela de `t`) pra todo mundo da sala.
         const pts = Array.isArray(msg.p) ? msg.p.slice(0, 2000) : []
-        if (!Number.isInteger(msg.s) || !pts.every((pt) => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))) {
+        if (
+          !Number.isInteger(msg.s) ||
+          typeof msg.t !== 'string' ||
+          !PEER_RE.test(msg.t) ||
+          !pts.every((pt) => Array.isArray(pt) && pt.length === 2 && pt.every(Number.isFinite))
+        ) {
           return void res.writeHead(400).end()
         }
-        broadcast(room, 'draw', { from, s: msg.s, p: pts, end: !!msg.end }, from)
+        broadcast(room, 'draw', { from, t: msg.t, s: msg.s, p: pts, end: !!msg.end }, from)
       } else if (msg.type === 'signal') {
         const target = room.peers.get(msg.to)
         if (target) send(target, 'signal', { from, data: msg.data })

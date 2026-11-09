@@ -21,19 +21,30 @@
   button:hover { border-color: #3a3a42; }
   button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); font-weight: 600; }
   button.danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
-  main { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; overflow: hidden; }
-  #stage { position: absolute; inset: 0; background: #000; display: none; }
-  #stage.on { display: block; }
-  #stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-  #ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
-  #stage.pen #ink { pointer-events: auto; cursor: crosshair; }
   button.active { background: #2a2a31; border-color: #5a5a66; }
+  main { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; overflow: hidden; }
+  /* Uma tela por pessoa compartilhando: lado a lado; empilhadas se a janela for mais alta que larga. */
+  #grid { position: absolute; inset: 0; display: grid; gap: 6px; padding: 6px; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+  #grid:empty { display: none; }
+  @media (max-aspect-ratio: 1/1) { #grid { grid-auto-flow: row; grid-auto-rows: minmax(0, 1fr); grid-template-rows: none; grid-template-columns: minmax(0, 1fr); } }
+  .tile { position: relative; background: #000; border-radius: 8px; overflow: hidden; min-width: 0; min-height: 0; }
+  .tile:fullscreen, .tile.inpip { border-radius: 0; }
+  .tile.inpip { position: fixed; inset: 0; }
+  .tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .tile canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
+  .tile.pen canvas { pointer-events: auto; cursor: crosshair; }
+  .tile .label { position: absolute; z-index: 1; top: 10px; left: 10px; background: rgb(0 0 0 / .6); padding: 4px 10px; border-radius: 999px; font-size: 12px; pointer-events: none; }
+  .tile .bar { position: absolute; z-index: 1; top: 8px; right: 8px; display: flex; gap: 6px; }
+  .tile .bar button { background: rgb(0 0 0 / .6); border-color: rgb(255 255 255 / .12); padding: 4px 10px; font-size: 12px; }
+  .tile .bar button.rec { background: var(--red); border-color: var(--red); color: #fff; }
+  .tile .status { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; color: var(--muted); padding: 24px; }
+  .tile .status h2 { color: var(--fg); font-size: 18px; font-weight: 600; margin: 0 0 6px; }
+  .tile .status p { margin: 0; }
   .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
   .empty { text-align: center; color: var(--muted); padding: 24px; }
   .empty h1 { color: var(--fg); font-size: 20px; font-weight: 600; margin: 0 0 6px; }
   .empty p { margin: 0 0 18px; }
   .empty button { padding: 11px 18px; font-size: 15px; }
-  .badge { position: absolute; z-index: 1; top: 12px; left: 12px; background: rgb(0 0 0 / .6); padding: 4px 10px; border-radius: 999px; font-size: 12px; display: none; }
   .hidden { display: none !important; }
   @media (max-width: 560px) { .room, .count { display: none; } }
 </style>
@@ -46,20 +57,14 @@
   <div class="count" id="count"></div>
   <button id="copy">Copiar link</button>
   <button id="pen" class="hidden" title="Desenhar na tela (D)"><span class="swatch" id="swatch"></span>Canetinha</button>
-  <button id="pip" class="hidden" title="Mini-janela sempre por cima, com os desenhos">Janela flutuante</button>
-  <button id="full" class="hidden">Tela cheia</button>
   <button id="share" class="primary">Compartilhar tela</button>
   <button id="stop" class="danger hidden">Parar</button>
 </header>
 <main>
-  <div id="stage">
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="ink"></canvas>
-  </div>
-  <div class="badge" id="badge">Você está compartilhando</div>
+  <div id="grid"></div>
   <div class="empty" id="empty">
     <h1>Ninguém está compartilhando</h1>
-    <p>Mande o link da sala e clique para mostrar sua tela.</p>
+    <p>Mande o link da sala e clique para mostrar sua tela. Até duas pessoas podem compartilhar ao mesmo tempo.</p>
     <button class="primary" id="share2">Compartilhar tela</button>
   </div>
 </main>
@@ -70,18 +75,19 @@ const me = Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toStr
 // ?relay=1 força tudo pelo TURN (diagnóstico).
 let ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] }
 const FORCE_RELAY = new URLSearchParams(location.search).has('relay')
+const MAX_SHARERS = 2
 const $ = (id) => document.getElementById(id)
-const video = $('video')
-const stage = $('stage') // referência fixa: o stage pode ir pra janela flutuante
+const grid = $('grid')
 
-let sharer = null       // peer que está compartilhando agora
+let sharers = []        // quem está compartilhando agora, na ordem em que começou (vem do servidor)
 let localStream = null  // minha tela, quando eu compartilho
 const peers = new Set() // outros peers na sala
-const pcs = new Map()   // peerId → RTCPeerConnection
+// Conexões por direção: `out:<id>` = minha tela indo para <id>; `in:<id>` = tela de <id> chegando.
+// Com duas pessoas compartilhando, as duas conexões existem entre o mesmo par.
+const pcs = new Map()
+const tiles = new Map() // sharerId → tela na grade
 let markReady
 const ready = new Promise((r) => (markReady = r)) // sala conectada (primeiro "hello")
-let viewState = 'idle'  // espectador: idle | connecting | connected | failed
-let retries = 0
 
 $('room').textContent = roomId
 document.title = `golive · ${roomId}`
@@ -94,15 +100,16 @@ function post(body) {
   )
   return queue
 }
-const signal = (to, data) => post({ type: 'signal', to, data })
+// role: 'tx' = mensagem de quem manda a tela; 'rx' = de quem assiste. Diz ao outro lado qual conexão usar.
+const signal = (to, role, data) => post({ type: 'signal', to, data: { role, ...data } })
 
-function closePc(id) {
-  pcs.get(id)?.close()
-  pcs.delete(id)
+function closePc(key) {
+  pcs.get(key)?.close()
+  pcs.delete(key)
 }
 
-function newPc(id) {
-  closePc(id)
+function newPc(key, peer, role) {
+  closePc(key)
   const pc = new RTCPeerConnection(FORCE_RELAY ? { ...ICE, iceTransportPolicy: 'relay' } : ICE)
   pc.pending = []
   // Candidatos em lote: um POST por candidato (em fila) atrasava os de relay, que chegam
@@ -111,7 +118,7 @@ function newPc(id) {
   let timer = null
   const send = () => {
     timer = null
-    if (batch.length && pcs.get(id) === pc) signal(id, { candidates: batch })
+    if (batch.length && pcs.get(key) === pc) signal(peer, role, { candidates: batch })
     batch = []
   }
   pc.onicecandidate = (e) => {
@@ -119,16 +126,27 @@ function newPc(id) {
     if (!e.candidate) send()
     else timer ??= setTimeout(send, 60)
   }
-  pcs.set(id, pc)
+  pcs.set(key, pc)
   return pc
+}
+
+// Áudio da tela é música/vídeo, não voz: Opus em estéreo e com bitrate de música.
+function hifiAudio(desc) {
+  const pt = desc.sdp.match(/a=rtpmap:(\d+) opus\/48000\/2/i)?.[1]
+  if (!pt) return desc
+  const sdp = desc.sdp.replace(new RegExp(`a=fmtp:${pt} (.*)`), (line, params) =>
+    /stereo=1/.test(params) ? line : `a=fmtp:${pt} ${params};stereo=1;sprop-stereo=1;maxaveragebitrate=128000`,
+  )
+  return { type: desc.type, sdp }
 }
 
 // Quem compartilha cria uma conexão por espectador e manda a oferta.
 async function offerTo(id) {
   if (!localStream) return
-  const pc = newPc(id)
+  const pc = newPc(`out:${id}`, id, 'tx')
   for (const track of localStream.getTracks()) pc.addTrack(track, localStream)
   for (const t of pc.getTransceivers()) {
+    if (t.sender.track?.kind !== 'video') continue
     const codecs = RTCRtpSender.getCapabilities?.('video')?.codecs
     if (codecs && t.setCodecPreferences) {
       // Prioriza VP9/AV1 (melhores pra texto de tela), sem remover os demais.
@@ -141,164 +159,319 @@ async function offerTo(id) {
     const p = sender.getParameters()
     p.degradationPreference = 'maintain-resolution'
     p.encodings = p.encodings?.length ? p.encodings : [{}]
-    p.encodings[0].maxBitrate = 4_000_000
+    // Duas telas na sala dividem a banda de quem assiste.
+    p.encodings[0].maxBitrate = sharers.length > 1 ? 2_500_000 : 4_000_000
     sender.setParameters(p).catch(() => {})
   }
-  await pc.setLocalDescription(await pc.createOffer())
-  signal(id, { sdp: pc.localDescription })
+  await pc.setLocalDescription(hifiAudio(await pc.createOffer()))
+  signal(id, 'tx', { sdp: pc.localDescription })
 }
 
 async function onSignal(from, data) {
-  if (data.sdp?.type === 'offer') {
-    if (from !== sharer) return
-    const pc = newPc(from)
-    viewState = 'connecting'
-    pc.ontrack = (e) => showStream(e.streams[0] ?? new MediaStream([e.track]))
-    pc.onconnectionstatechange = () => {
-      if (pcs.get(from) !== pc) return
-      if (pc.connectionState === 'connected') {
-        viewState = 'connected'
-        retries = 0
-      } else if (pc.connectionState === 'failed') {
-        // Pede uma nova oferta a quem compartilha (algumas tentativas, com espera crescente).
-        viewState = 'failed'
-        if (retries < 5) setTimeout(() => sharer === from && signal(from, { retry: true }), 1000 * ++retries)
+  if (data.role === 'tx') {
+    // De quem compartilha para mim, que assisto.
+    const key = `in:${from}`
+    if (data.sdp?.type === 'offer') {
+      const tile = tiles.get(from)
+      if (!tile || !sharers.includes(from)) return
+      const pc = newPc(key, from, 'rx')
+      setState(tile, 'connecting')
+      pc.ontrack = (e) => attach(tile, e.streams[0] ?? new MediaStream([e.track]))
+      pc.onconnectionstatechange = () => {
+        if (pcs.get(key) !== pc) return
+        if (pc.connectionState === 'connected') {
+          tile.retries = 0
+          setState(tile, 'connected')
+        } else if (pc.connectionState === 'failed') {
+          // Pede uma nova oferta a quem compartilha (algumas tentativas, com espera crescente).
+          setState(tile, 'failed')
+          if (tile.retries < 5) setTimeout(() => tiles.get(from) === tile && signal(from, 'rx', { retry: true }), 1000 * ++tile.retries)
+        }
       }
-      render()
+      await pc.setRemoteDescription(data.sdp)
+      await pc.setLocalDescription(hifiAudio(await pc.createAnswer()))
+      signal(from, 'rx', { sdp: pc.localDescription })
+      for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
+    } else if (data.candidates) {
+      addCandidates(pcs.get(key), data.candidates)
     }
-    await pc.setRemoteDescription(data.sdp)
-    await pc.setLocalDescription(await pc.createAnswer())
-    signal(from, { sdp: pc.localDescription })
-    for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
-  } else if (data.sdp?.type === 'answer') {
-    const pc = pcs.get(from)
-    if (!pc) return
-    await pc.setRemoteDescription(data.sdp)
-    for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
-  } else if (data.retry) {
-    if (sharer === me) offerTo(from)
-  } else if (data.candidates) {
-    const pc = pcs.get(from)
-    if (!pc) return
-    for (const c of data.candidates) {
-      if (pc.remoteDescription) pc.addIceCandidate(c).catch(() => {})
-      else pc.pending.push(c)
+  } else if (data.role === 'rx') {
+    // De quem assiste a minha tela.
+    const pc = pcs.get(`out:${from}`)
+    if (data.sdp?.type === 'answer') {
+      if (!pc) return
+      await pc.setRemoteDescription(data.sdp)
+      for (const c of pc.pending.splice(0)) pc.addIceCandidate(c).catch(() => {})
+    } else if (data.retry) {
+      offerTo(from)
+    } else if (data.candidates) {
+      addCandidates(pc, data.candidates)
     }
   }
 }
 
-function showStream(stream) {
-  video.srcObject = stream
-  video.play().catch(() => {})
+function addCandidates(pc, list) {
+  if (!pc) return
+  for (const c of list) {
+    if (pc.remoteDescription) pc.addIceCandidate(c).catch(() => {})
+    else pc.pending.push(c)
+  }
+}
+
+// ---- Telas na grade ----
+function makeTile(id) {
+  const el = document.createElement('div')
+  el.className = 'tile'
+  el.innerHTML = `
+    <video autoplay playsinline muted></video>
+    <canvas></canvas>
+    <div class="label"></div>
+    <div class="bar">
+      <button data-a="sound" class="hidden"></button>
+      <button data-a="clip" title="Grava esta tela (com o áudio). Clique de novo para salvar o clipe.">Clipar</button>
+      <button data-a="pip" class="hidden" title="Mini-janela sempre por cima, com os desenhos">Janela flutuante</button>
+      <button data-a="full" title="Tela cheia (duplo clique)">Tela cheia</button>
+    </div>
+    <div class="status hidden"><div><h2></h2><p></p></div></div>`
+  const q = (s) => el.querySelector(s)
+  const tile = { id, el, video: q('video'), ink: q('canvas'), strokes: new Map(), drawing: false, state: 'connecting', retries: 0, rec: null }
+  tile.ink.addEventListener('pointerdown', (e) => penDown(tile, e))
+  tile.ink.addEventListener('pointermove', (e) => penMove(tile, e))
+  tile.ink.addEventListener('pointerup', penUp)
+  tile.ink.addEventListener('pointercancel', penUp)
+  q('[data-a=sound]').onclick = () => {
+    tile.video.muted = !tile.video.muted
+    if (!tile.video.muted) tile.video.play().catch(() => {})
+    paintTile(tile)
+  }
+  q('[data-a=clip]').onclick = () => toggleClip(tile)
+  q('[data-a=pip]').onclick = togglePip
+  q('[data-a=full]').onclick = () => toggleFull(tile)
+  el.ondblclick = (e) => !pen && !e.target.closest('button') && toggleFull(tile)
+  el.classList.toggle('pen', pen)
+  new ResizeObserver(() => kick(tile)).observe(tile.ink)
+  if (!window.MediaRecorder) q('[data-a=clip]').classList.add('hidden')
+  tiles.set(id, tile)
+  return tile
+}
+
+function toggleFull(tile) {
+  const doc = tile.el.ownerDocument
+  if (doc.fullscreenElement) doc.exitFullscreen()
+  else tile.el.requestFullscreen?.()
+}
+
+function attach(tile, stream) {
+  const v = tile.video
+  if (v.srcObject !== stream) v.srcObject = stream
+  if (tile.id === me) {
+    v.muted = true // sem eco do meu próprio áudio
+    v.play().catch(() => {})
+  } else {
+    // Tenta tocar com som; se o navegador bloquear (sem clique na página ainda), toca mudo e mostra "Ativar som".
+    v.muted = false
+    v.play().catch(() => {
+      v.muted = true
+      v.play().catch(() => {})
+      paintTile(tile)
+    })
+  }
+  stream.onaddtrack = () => paintTile(tile)
+  paintTile(tile)
+}
+
+function setState(tile, state) {
+  tile.state = state
+  paintTile(tile)
   render()
 }
 
+function removeTile(id) {
+  const tile = tiles.get(id)
+  if (!tile) return
+  if (tile.rec) stopClip(tile)
+  if (pipTile === tile) pipWin?.close()
+  tile.video.srcObject = null
+  tile.el.remove()
+  tiles.delete(id)
+}
+
+function paintTile(tile) {
+  const q = (s) => tile.el.querySelector(s)
+  const mine = tile.id === me
+  const stream = tile.video.srcObject
+  const hasAudio = !!stream?.getAudioTracks().length
+  const live = mine || tile.state === 'connected'
+  q('.label').textContent = mine
+    ? `Você está compartilhando${hasAudio ? ' · com áudio' : ''}${pipTile === tile ? ' · na janela flutuante' : ''}`
+    : `Tela ${sharers.indexOf(tile.id) + 1}${hasAudio ? '' : ' · sem áudio'}`
+  const sound = q('[data-a=sound]')
+  sound.classList.toggle('hidden', mine || !hasAudio || !live)
+  sound.textContent = tile.video.muted ? 'Ativar som' : 'Silenciar'
+  sound.classList.toggle('active', tile.video.muted)
+  q('[data-a=pip]').classList.toggle('hidden', !mine || !('documentPictureInPicture' in window))
+  q('[data-a=pip]').textContent = pipTile === tile ? 'Fechar janela flutuante' : 'Janela flutuante'
+  q('[data-a=clip]').disabled = !live
+  q('.bar').classList.toggle('hidden', !live)
+  const status = q('.status')
+  status.classList.toggle('hidden', live)
+  q('.status h2').textContent = tile.state === 'failed' ? 'Não deu para conectar' : 'Conectando à tela…'
+  q('.status p').textContent = tile.state === 'failed' ? (tile.retries < 5 ? 'Tentando de novo…' : 'Recarregue a página para tentar outra vez.') : ''
+}
+
+// Sincroniza a grade com a lista de quem compartilha (minha tela entra assim que começo, antes do servidor confirmar).
+function layout() {
+  const order = [...sharers]
+  if (localStream && !order.includes(me)) order.push(me)
+  for (const id of [...tiles.keys()]) if (!order.includes(id)) removeTile(id)
+  for (const id of order) {
+    let tile = tiles.get(id)
+    if (!tile) {
+      tile = makeTile(id)
+      if (id === me) attach(tile, localStream)
+    }
+    if (pipTile !== tile) grid.append(tile.el) // append move para o fim: fica na ordem de `order`
+    paintTile(tile)
+  }
+}
+
+function render() {
+  const sharingMe = !!localStream
+  const anyLive = [...tiles.values()].some((t) => t.id === me || t.state === 'connected')
+  $('dot').classList.toggle('live', sharers.length > 0 || sharingMe)
+  $('pen').classList.toggle('hidden', !anyLive)
+  if (!anyLive && pen) setPen(false)
+  $('empty').classList.toggle('hidden', tiles.size > 0)
+  $('share').classList.toggle('hidden', sharingMe)
+  const others = sharers.filter((s) => s !== me).length
+  $('share').textContent = others === 0 ? 'Compartilhar tela' : others < MAX_SHARERS ? 'Compartilhar também' : 'Assumir tela'
+  $('share').title = others >= MAX_SHARERS ? 'Já tem duas telas: a sua entra no lugar da mais antiga' : ''
+  $('stop').classList.toggle('hidden', !sharingMe)
+  $('count').textContent = `${peers.size + 1} na sala`
+}
+
 async function startShare() {
+  if (localStream) return
   try {
-    localStream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false })
+    // Áudio da tela/aba (não do microfone). systemAudio: tela inteira no Windows/ChromeOS;
+    // restrictOwnAudio: não recaptura o som desta página (a outra tela tocando aqui).
+    localStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: 30 },
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, restrictOwnAudio: true },
+      systemAudio: 'include',
+      selfBrowserSurface: 'exclude',
+    })
   } catch {
     return
   }
   await ready // o servidor recusa o "share" de quem ainda não entrou na sala
-  localStream.getVideoTracks()[0].contentHint = 'detail'
-  localStream.getVideoTracks()[0].addEventListener('ended', stopShare)
-  video.srcObject = localStream
-  sharer = me
+  const [v] = localStream.getVideoTracks()
+  v.contentHint = 'detail'
+  for (const t of localStream.getAudioTracks()) t.contentHint = 'music'
+  v.addEventListener('ended', stopShare)
+  layout()
+  render()
   await post({ type: 'share' })
   for (const id of peers) offerTo(id)
-  render()
 }
 
-function stopShare() {
+// Para de mandar a minha tela. `tell` = avisar o servidor (falso quando ele já me tirou da lista).
+function dropLocal(tell) {
   if (!localStream) return
   for (const t of localStream.getTracks()) t.stop()
   localStream = null
-  for (const id of [...pcs.keys()]) closePc(id)
-  if (sharer === me) {
-    sharer = null
-    post({ type: 'unshare' })
+  for (const key of [...pcs.keys()]) if (key.startsWith('out:')) closePc(key)
+  if (tell) post({ type: 'unshare' })
+  sharers = sharers.filter((s) => s !== me)
+  layout()
+  render()
+}
+const stopShare = () => dropLocal(true)
+
+function setSharers(list) {
+  const old = sharers
+  sharers = list
+  // Alguém assumiu no meu lugar (já havia duas telas): paro de mandar a minha.
+  if (old.includes(me) && !list.includes(me) && localStream) dropLocal(false)
+  for (const id of old) {
+    if (id !== me && !list.includes(id)) closePc(`in:${id}`)
   }
-  video.srcObject = null
-  pipWin?.close()
-  strokes.clear()
+  layout()
   render()
 }
 
-function render() {
-  const sharingMe = sharer === me && !!localStream
-  const live = !!sharer
-  const watching = live && !sharingMe && viewState === 'connected'
-  $('dot').classList.toggle('live', live)
-  stage.classList.toggle('on', sharingMe || watching)
-  $('pen').classList.toggle('hidden', !(sharingMe || watching))
-  $('pip').classList.toggle('hidden', !sharingMe || !('documentPictureInPicture' in window))
-  $('pip').textContent = pipWin ? 'Fechar janela flutuante' : 'Janela flutuante'
-  if (!(sharingMe || watching) && pen) setPen(false)
-  $('badge').style.display = sharingMe ? 'block' : 'none'
-  $('badge').textContent = pipWin ? 'Você está compartilhando · tela na janela flutuante' : 'Você está compartilhando'
-  $('empty').classList.toggle('hidden', live)
-  $('share').classList.toggle('hidden', sharingMe)
-  $('share').textContent = live ? 'Assumir tela' : 'Compartilhar tela'
-  $('stop').classList.toggle('hidden', !sharingMe)
-  $('full').classList.toggle('hidden', !watching)
-  const n = peers.size + 1
-  $('count').textContent = `${n} na sala`
-  if (live && !sharingMe && !watching) {
-    $('empty').classList.remove('hidden')
-    $('empty').querySelector('h1').textContent = viewState === 'failed' ? 'Não deu para conectar' : 'Conectando à tela…'
-    $('empty').querySelector('p').textContent = viewState === 'failed' ? (retries < 5 ? 'Tentando de novo…' : 'Recarregue a página para tentar outra vez.') : ''
-    $('share2').classList.add('hidden')
-  } else {
-    $('empty').querySelector('h1').textContent = 'Ninguém está compartilhando'
-    $('empty').querySelector('p').textContent = 'Mande o link da sala e clique para mostrar sua tela.'
-    $('share2').classList.remove('hidden')
+// ---- Clipe: grava a tela (vídeo + áudio) até clicar de novo, e baixa o arquivo ----
+const CLIP_TYPES = ['video/mp4;codecs=avc1.640028,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm']
+function toggleClip(tile) {
+  if (tile.rec) return stopClip(tile)
+  const stream = tile.video.srcObject
+  if (!stream) return
+  const mimeType = CLIP_TYPES.find((t) => MediaRecorder.isTypeSupported(t))
+  let rec
+  try {
+    rec = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000, audioBitsPerSecond: 128_000 })
+  } catch {
+    rec = new MediaRecorder(stream)
   }
+  const chunks = []
+  const started = Date.now()
+  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
+  rec.onstop = () => {
+    clearInterval(tile.recTimer)
+    const type = rec.mimeType || 'video/webm'
+    const blob = new Blob(chunks, { type })
+    const stamp = new Date(started).toISOString().slice(0, 19).replace(/[:T]/g, '-')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `golive-${roomId}-${stamp}.${type.includes('mp4') ? 'mp4' : 'webm'}`
+    document.body.append(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(a.href), 60_000)
+  }
+  rec.start(1000)
+  tile.rec = rec
+  const btn = tile.el.querySelector('[data-a=clip]')
+  btn.classList.add('rec')
+  const tick = () => {
+    const s = Math.floor((Date.now() - started) / 1000)
+    btn.textContent = `Salvar clipe ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+  }
+  tick()
+  tile.recTimer = setInterval(tick, 500)
 }
 
-function setSharer(id) {
-  if (id === sharer) return
-  const old = sharer
-  sharer = id
-  if (old && old !== me) closePc(old)
-  strokes.clear()
-  if (old === me && id !== me && localStream) {
-    pipWin?.close()
-    // Alguém assumiu: paro de mandar a minha tela.
-    for (const t of localStream.getTracks()) t.stop()
-    localStream = null
-    for (const p of [...pcs.keys()]) closePc(p)
-  }
-  if (id !== me) {
-    video.srcObject = null
-    viewState = id ? 'connecting' : 'idle'
-    retries = 0
-  }
-  render()
+function stopClip(tile) {
+  const rec = tile.rec
+  tile.rec = null
+  if (rec?.state !== 'inactive') rec?.stop()
+  const btn = tile.el.querySelector('[data-a=clip]')
+  btn.classList.remove('rec')
+  btn.textContent = 'Clipar'
 }
 
-// ---- Canetinha: traços em coordenadas 0..1 do vídeo, iguais pra todo mundo; somem sozinhos ----
+// ---- Canetinha: traços em coordenadas 0..1 do vídeo de cada tela, iguais pra todo mundo; somem sozinhos ----
 const COLORS = ['#ff3b5c', '#ffb020', '#2fe07a', '#36b3ff', '#c07bff', '#ff6fd8', '#ffe14d']
 const colorOf = (id) => COLORS[parseInt(id.slice(-6), 16) % COLORS.length]
 const HOLD = 2500 // ms visível depois de terminar
 const FADE = 700  // ms esmaecendo
-const strokes = new Map() // `${peer}:${n}` → { color, pts: [[x, y]], done: ms | null, seen: ms }
-const ink = $('ink')
 let pen = false
-let mine = null // traço que estou desenhando
+let mine = null // traço que estou desenhando: { n, stroke, tile }
 let outbox = []
 let strokeSeq = 0
 let pipWin = null
-let drawing = false
+let pipTile = null
 $('swatch').style.background = colorOf(me)
 
 function setPen(on) {
   pen = on
   $('pen').classList.toggle('active', on)
-  stage.classList.toggle('pen', on)
+  for (const t of tiles.values()) t.el.classList.toggle('pen', on)
 }
 
-// Área do vídeo dentro do stage (object-fit: contain deixa tarja preta).
-function contentRect() {
+// Área do vídeo dentro da tela (object-fit: contain deixa tarja preta).
+function contentRect(tile) {
+  const { ink, video } = tile
   const W = ink.clientWidth
   const H = ink.clientHeight
   if (!video.videoWidth || !W) return null
@@ -311,10 +484,10 @@ function contentRect() {
 // Um envio por vez levando tudo o que acumulou: o atraso fica em ~1 viagem ao servidor,
 // em vez de crescer com uma fila de POSTs enquanto a pessoa desenha.
 let sending = false
-let sendQueue = [] // pedaços { s, p, end } ainda não enviados
+let sendQueue = [] // pedaços { t, s, p, end } ainda não enviados
 function flush(end) {
   if (mine && (outbox.length || end)) {
-    sendQueue.push({ s: mine.n, p: outbox, end: !!end })
+    sendQueue.push({ t: mine.tile.id, s: mine.n, p: outbox, end: !!end })
     outbox = []
   }
   if (sending || !sendQueue.length) return
@@ -339,63 +512,66 @@ function flush(end) {
 }
 setInterval(() => flush(false), 40)
 
-function addPoint(e) {
-  const r = contentRect()
+function addPoint(tile, e) {
+  const r = contentRect(tile)
   if (!r || !mine) return
   const pt = [+((e.offsetX - r.x) / r.w).toFixed(4), +((e.offsetY - r.y) / r.h).toFixed(4)]
   mine.stroke.pts.push(pt)
   mine.stroke.seen = performance.now()
   outbox.push(pt)
-  kick()
+  kick(tile)
 }
 
-ink.addEventListener('pointerdown', (e) => {
+function penDown(tile, e) {
   if (!pen || e.button !== 0) return
   e.preventDefault()
-  ink.setPointerCapture(e.pointerId)
+  tile.ink.setPointerCapture(e.pointerId)
+  if (mine) penUp()
   const n = ++strokeSeq
   const stroke = { color: colorOf(me), pts: [], done: null, seen: performance.now() }
-  strokes.set(`${me}:${n}`, stroke)
-  mine = { n, stroke }
-  addPoint(e)
-})
-ink.addEventListener('pointermove', (e) => {
-  if (!mine) return
-  for (const ev of e.getCoalescedEvents?.() ?? [e]) addPoint(ev)
-})
-const endStroke = () => {
+  tile.strokes.set(`${me}:${n}`, stroke)
+  mine = { n, stroke, tile }
+  addPoint(tile, e)
+}
+function penMove(tile, e) {
+  if (!mine || mine.tile !== tile) return
+  for (const ev of e.getCoalescedEvents?.() ?? [e]) addPoint(tile, ev)
+}
+function penUp() {
   if (!mine) return
   mine.stroke.done = performance.now()
   flush(true)
+  const { tile } = mine
   mine = null
-  kick()
+  kick(tile)
 }
-ink.addEventListener('pointerup', endStroke)
-ink.addEventListener('pointercancel', endStroke)
 
-function onDraw({ from, s, p, end }) {
+function onDraw({ from, t, s, p, end }) {
   if (from === me) return
+  const tile = tiles.get(t)
+  if (!tile) return
   const key = `${from}:${s}`
-  let stroke = strokes.get(key)
+  let stroke = tile.strokes.get(key)
   if (!stroke) {
     stroke = { color: colorOf(from), pts: [], done: null, seen: 0 }
-    strokes.set(key, stroke)
+    tile.strokes.set(key, stroke)
   }
   stroke.pts.push(...p)
   stroke.seen = performance.now()
   if (end) stroke.done = stroke.seen
-  kick()
+  kick(tile)
 }
 
-// Loop de desenho no window onde o stage está (a janela flutuante continua animando
+// Loop de desenho no window onde a tela está (a janela flutuante continua animando
 // mesmo com a aba principal em segundo plano).
-function kick() {
-  if (drawing) return
-  drawing = true
-  ;(ink.ownerDocument.defaultView ?? window).requestAnimationFrame(paint)
+function kick(tile) {
+  if (tile.drawing || !tiles.has(tile.id)) return
+  tile.drawing = true
+  ;(tile.ink.ownerDocument.defaultView ?? window).requestAnimationFrame(() => paint(tile))
 }
 
-function paint() {
+function paint(tile) {
+  const { ink, strokes } = tile
   const win = ink.ownerDocument.defaultView ?? window
   const dpr = win.devicePixelRatio || 1
   const W = Math.round(ink.clientWidth * dpr)
@@ -406,7 +582,7 @@ function paint() {
   }
   const ctx = ink.getContext('2d')
   ctx.clearRect(0, 0, W, H)
-  const r = contentRect()
+  const r = contentRect(tile)
   const now = performance.now()
   for (const [key, st] of strokes) {
     // Traço remoto sem "fim" (pacote perdido) também expira.
@@ -443,33 +619,41 @@ function paint() {
     ctx.stroke()
   }
   ctx.globalAlpha = 1
-  drawing = false
-  if (strokes.size) kick()
+  tile.drawing = false
+  if (strokes.size) kick(tile)
 }
-new ResizeObserver(kick).observe(ink)
 
 // Janela flutuante (Document Picture-in-Picture): quem compartilha vê a própria tela com
-// os desenhos por cima de qualquer app. O stage inteiro (vídeo + canvas) muda de janela.
+// os desenhos por cima de qualquer app. A tela inteira (vídeo + canvas) muda de janela.
 async function togglePip() {
   if (pipWin) return pipWin.close()
-  const r = video.videoWidth ? video.videoHeight / video.videoWidth : 9 / 16
+  const tile = tiles.get(me)
+  if (!tile) return
+  const v = tile.video
+  const r = v.videoWidth ? v.videoHeight / v.videoWidth : 9 / 16
   pipWin = await documentPictureInPicture.requestWindow({ width: 640, height: Math.round(640 * r) })
+  pipTile = tile
   for (const st of document.querySelectorAll('style')) pipWin.document.head.append(st.cloneNode(true))
   pipWin.document.title = 'golive'
-  pipWin.document.body.append(stage)
-  video.play().catch(() => {})
+  pipWin.document.body.append(tile.el)
+  tile.el.classList.add('inpip')
+  v.play().catch(() => {})
   pipWin.addEventListener('pagehide', () => {
-    document.querySelector('main').prepend(stage)
-    video.play().catch(() => {})
     pipWin = null
-    drawing = false
-    kick()
+    pipTile = null
+    tile.el.classList.remove('inpip')
+    if (tiles.get(me) === tile) {
+      layout()
+      v.play().catch(() => {})
+      tile.drawing = false
+      kick(tile)
+    }
     render()
   })
   pipWin.addEventListener('keydown', (e) => e.key === 'd' && setPen(!pen))
-  drawing = false
-  kick()
-  render()
+  tile.drawing = false
+  kick(tile)
+  paintTile(tile)
 }
 
 try {
@@ -479,34 +663,35 @@ try {
 
 const es = new EventSource(`/api/${roomId}/events?peer=${me}`)
 es.addEventListener('hello', (e) => {
-  const { sharer: s, peers: list } = JSON.parse(e.data)
+  const { sharers: list, peers: others } = JSON.parse(e.data)
   markReady()
   peers.clear()
-  for (const p of list) peers.add(p)
+  for (const p of others) peers.add(p)
+  // (Re)conectei: recomeço do zero as telas dos outros.
+  for (const key of [...pcs.keys()]) if (key.startsWith('in:')) closePc(key)
+  for (const id of [...tiles.keys()]) if (id !== me) removeTile(id)
+  sharers = []
+  setSharers(list.filter((s) => s !== me))
   if (localStream) {
     // Reconectei enquanto compartilhava: retomo a tela.
-    sharer = me
     post({ type: 'share' })
     for (const id of peers) offerTo(id)
-  } else {
-    sharer = null
-    setSharer(s)
   }
-  render()
 })
 es.addEventListener('join', (e) => {
   const { peer } = JSON.parse(e.data)
   peers.add(peer)
-  if (sharer === me) offerTo(peer)
+  if (localStream) offerTo(peer)
   render()
 })
 es.addEventListener('leave', (e) => {
   const { peer } = JSON.parse(e.data)
   peers.delete(peer)
-  closePc(peer)
+  closePc(`out:${peer}`)
+  closePc(`in:${peer}`)
   render()
 })
-es.addEventListener('sharer', (e) => setSharer(JSON.parse(e.data).sharer))
+es.addEventListener('sharers', (e) => setSharers(JSON.parse(e.data).sharers))
 es.addEventListener('draw', (e) => onDraw(JSON.parse(e.data)))
 es.addEventListener('signal', (e) => {
   const { from, data } = JSON.parse(e.data)
@@ -516,9 +701,7 @@ es.addEventListener('signal', (e) => {
 $('share').onclick = startShare
 $('share2').onclick = startShare
 $('stop').onclick = stopShare
-$('full').onclick = () => stage.requestFullscreen?.()
 $('pen').onclick = () => setPen(!pen)
-$('pip').onclick = togglePip
 addEventListener('keydown', (e) => {
   if (e.target.closest?.('input, textarea') || e.metaKey || e.ctrlKey || e.altKey) return
   if (e.key === 'd' && !$('pen').classList.contains('hidden')) setPen(!pen)
@@ -529,7 +712,6 @@ $('copy').onclick = async () => {
   $('copy').textContent = 'Copiado!'
   setTimeout(() => ($('copy').textContent = 'Copiar link'), 1500)
 }
-stage.ondblclick = () => !pen && (document.fullscreenElement ? document.exitFullscreen() : stage.requestFullscreen?.())
 if (!navigator.mediaDevices?.getDisplayMedia) $('share').disabled = $('share2').disabled = true
 render()
 </script>
